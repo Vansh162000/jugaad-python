@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jugaad Python</title>
+<meta name="description" content="Reels jaisi Python practice: concept samjho, code likho, tests pass karo.">
+<meta name="theme-color" content="#13212E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#13212E; --paper:#EEF3F7; --yellow:#FFD43B; --blue:#3776AB; --mint:#5CC9A7; --coral:#F2785C;
+  --violet:#6A4BD8; --sky:#8EC5F0; --pink:#F49AC1; --night:#0E1824;
+  --bg:#13212E; --surface:#1C2E3E; --text:#EEF3F7; --muted:#B4C3D0; --line:#2E4558;
+  --font:"Baloo 2", ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){--bg:#EEF3F7;--surface:#FFFFFF;--text:#13212E;--muted:#4D6375;--line:#D3DEE7;color-scheme:light}
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button{font:inherit}
+p{margin:0}
+code{font-family:var(--mono);font-size:.88em;background:color-mix(in srgb,currentColor 14%,transparent);padding:1px 5px;border-radius:6px}
+
+#feed{height:100dvh;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior-y:contain;scrollbar-width:none}
+#feed::-webkit-scrollbar{display:none}
+#feed.typing{scroll-snap-type:none}
+.card{--c-bg:var(--paper);--c-fg:var(--ink);background:var(--c-bg);color:var(--c-fg);height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;display:flex}
+.card .inner{flex:1;overflow-y:auto;width:100%;max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:14px;
+  padding:calc(env(safe-area-inset-top,0px) + 62px) 20px calc(env(safe-area-inset-bottom,0px) + 92px)}
+.t-learn1{--c-bg:var(--paper)} .t-learn2{--c-bg:var(--yellow)} .t-predict{--c-bg:var(--sky)}
+.t-fill{--c-bg:var(--mint)} .t-bug{--c-bg:var(--coral)} .t-write{--c-bg:var(--ink);--c-fg:var(--paper)}
+.t-redo{--c-bg:var(--ink);--c-fg:var(--paper)} .t-test{--c-bg:var(--violet);--c-fg:#FFFFFF}
+.t-review{--c-bg:var(--pink)} .t-next{--c-bg:var(--blue);--c-fg:#FFFFFF} .t-note{--c-bg:var(--paper)}
+.t-write .inner,.t-redo .inner{border-inline:3px solid var(--yellow)}
+
+.chip{align-self:flex-start;border:2px solid currentColor;border-radius:999px;padding:1px 12px;font-weight:700;font-size:.95rem}
+.big{font-size:clamp(2.4rem,11vw,4.2rem);font-weight:800;line-height:1;margin:4px 0 0;letter-spacing:-.01em}
+.say{font-size:clamp(1.45rem,6vw,2.1rem);font-weight:700;line-height:1.2;margin:2px 0 0}
+.mean{font-size:1.2rem;font-weight:600}
+.task{font-size:1.12rem;font-weight:600}
+.hint,.muted{opacity:.82}
+.small{font-size:.9rem}
+.lbl{font-size:.88rem;font-weight:800;opacity:.8;margin-bottom:4px}
+.sec{display:grid;gap:8px}
+ul.pts{margin:0;padding-left:1.2em;display:grid;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.btn{border:2px solid var(--c-fg);background:transparent;color:var(--c-fg);border-radius:999px;padding:9px 18px;min-height:46px;font-weight:700;font-size:1rem;cursor:pointer;touch-action:manipulation}
+.btn.main{background:var(--c-fg);color:var(--c-bg)}
+.btn.tiny{min-height:34px;padding:2px 12px;font-size:.88rem}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.opt:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid var(--c-fg);outline-offset:3px}
+
+.codebox,.outbox{margin:0;background:var(--night);color:#E6EDF3;font-family:var(--mono);font-size:.9rem;line-height:1.5;border-radius:16px;padding:12px 14px;overflow-x:auto;white-space:pre;tab-size:4}
+.outbox{background:#06101A;color:#B8F5C8;white-space:pre-wrap;border:1px dashed #2E4558}
+.outbox.bad{color:#FFB4A8}
+.cb{display:grid;gap:8px}
+.cb .row.locked{display:none}
+
+.ed{display:grid;gap:8px}
+.editor{display:flex;background:var(--night);border-radius:16px;overflow:hidden}
+.gutter{margin:0;padding:12px 6px 12px 10px;color:#5E7487;text-align:right;font-family:var(--mono);font-size:.9rem;line-height:1.5;user-select:none;white-space:pre;overflow:hidden;min-width:2.4em}
+.gutter .bad{color:#FF8A80;font-weight:700}
+textarea.code{flex:1;min-width:0;background:transparent;color:#E6EDF3;border:0;outline:none;resize:none;font-family:var(--mono);font-size:.9rem;line-height:1.5;padding:12px 12px 12px 6px;white-space:pre;overflow:auto;tab-size:4}
+.keys{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.keys button{flex:none;font-family:var(--mono);min-width:40px;min-height:38px;border-radius:10px;border:2px solid var(--c-fg);background:transparent;color:var(--c-fg);font-weight:600;cursor:pointer}
+
+.out{display:grid;gap:10px}
+.fb{background:color-mix(in srgb,var(--c-fg) 12%,transparent);border-radius:18px;padding:12px 14px;display:grid;gap:6px}
+.strong{font-weight:700;font-size:1.08rem}
+.hit,.miss{font-weight:800;font-size:1.25rem}
+.wait{opacity:.75}
+ul.res{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+ul.res li{font-family:var(--mono);font-size:.85rem;overflow-wrap:anywhere}
+.opt{display:block;width:100%;text-align:left;border:2px solid var(--c-fg);border-radius:14px;background:transparent;color:var(--c-fg);padding:8px 12px;cursor:pointer}
+.opt pre{margin:0;font-family:var(--mono);font-size:.92rem;white-space:pre-wrap}
+.opt.right{background:#16834A;border-color:#16834A;color:#fff}
+.opt.wrong{background:#B3261E;border-color:#B3261E;color:#fff}
+.opts{display:grid;gap:8px}
+.stars{font-size:2.6rem;letter-spacing:4px;line-height:1}
+.dots{display:flex;gap:6px}
+.dots span{width:28px;height:6px;border-radius:9px;background:color-mix(in srgb,var(--c-fg) 30%,transparent)}
+.dots span.on{background:var(--c-fg)}
+.stamp{align-self:flex-start;border:2px dashed currentColor;border-radius:14px;padding:6px 14px;font-weight:800;transform:rotate(-2deg);animation:stamp .35s ease-out}
+@keyframes stamp{from{transform:rotate(-8deg) scale(1.4);opacity:0}}
+.secret{border:2px dashed currentColor;border-radius:18px;padding:12px 14px;display:grid;gap:8px}
+
+.hud{position:fixed;inset:0 0 auto;z-index:20;display:flex;justify-content:center;gap:6px;padding:calc(env(safe-area-inset-top,0px) + 10px) 8px 8px;pointer-events:none}
+.pill{pointer-events:auto;background:rgba(19,33,46,.86);color:#EEF3F7;border:0;border-radius:999px;padding:4px 11px;font-weight:700;font-size:.92rem;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-variant-numeric:tabular-nums}
+.pill.risk{box-shadow:inset 0 0 0 2px var(--yellow)}
+.tabs{position:fixed;inset:auto 0 0;z-index:20;display:flex;justify-content:center;gap:6px;padding:8px 8px calc(env(safe-area-inset-bottom,0px) + 10px);pointer-events:none}
+.tabs button{pointer-events:auto;background:rgba(19,33,46,.9);color:#EEF3F7;border:0;border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.tabs button:focus-visible,.pill:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+.sheet{border:0;padding:0;width:100%;max-width:720px;height:100dvh;max-height:100dvh;margin:0 auto;background:var(--bg);color:var(--text);--c-bg:var(--bg);--c-fg:var(--text)}
+.sheet::backdrop{background:rgba(5,12,20,.6)}
+.sheet-in{height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px calc(env(safe-area-inset-bottom,0px) + 40px);display:grid;gap:0;align-content:start}
+.sheet h2{font-size:1.9rem;line-height:1.1;margin:8px 0 4px}
+.sheet h3{font-size:1.2rem;margin:0 0 8px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;margin:12px 0;display:grid;gap:8px}
+.panel label{display:block;font-weight:700;margin:6px 0 2px}
+.panel select,.panel input:not([type=checkbox]){width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--text)}
+.check{display:flex!important;gap:8px;align-items:center;font-weight:600!important}
+.check input{width:20px;height:20px}
+.bar{height:12px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar span{display:block;height:100%;background:var(--yellow)}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi{background:var(--bg);border-radius:14px;padding:10px}
+.kpi b{display:block;font-size:1.5rem;line-height:1.1}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.badge{border:1px solid var(--line);border-radius:14px;padding:8px 10px}
+.badge.off{opacity:.38}
+.badge b{display:block}
+ul.clean{list-style:none;padding:0;margin:0}
+ul.clean>li{border-bottom:1px solid var(--line);padding:12px 0;display:grid;gap:6px}
+ul.clean>li:last-child{border-bottom:0}
+.top{display:flex;justify-content:flex-end;position:sticky;top:0;z-index:2}
+.lock{opacity:.5}
+
+.loot{--c-bg:var(--yellow);--c-fg:var(--ink);background:var(--c-bg);color:var(--c-fg);border:0;border-radius:28px;padding:26px;max-width:340px;text-align:center}
+.loot::backdrop{background:rgba(5,12,20,.65)}
+.loot-emoji{font-size:4rem;line-height:1}
+.loot h2{margin:8px 0}
+.loot p{margin-bottom:16px}
+#toasts{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:0;right:0;z-index:40;display:grid;justify-items:center;gap:6px;pointer-events:none}
+.toast{background:#EEF3F7;color:#13212E;border-radius:999px;padding:6px 16px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:toast 2.8s forwards;max-width:92vw;text-align:center}
+.toast.xp{background:var(--yellow)}
+@keyframes toast{0%{opacity:0;transform:translateY(8px)}10%,82%{opacity:1;transform:none}100%{opacity:0;transform:translateY(8px)}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="hud" aria-label="Aaj ki progress">
+  <span class="pill" id="hStreak" title="Streak">🔥 0</span>
+  <span class="pill" id="hFreeze" title="Streak freezes">🧊 2</span>
+  <span class="pill" id="hGoal" title="Daily goal">🎯 0/3</span>
+  <span class="pill" id="hXP" title="Level">⚡ L1</span>
+  <button class="pill" id="hPy" title="Python engine">🐍 ⏳</button>
+</header>
+
+<main id="feed" aria-label="Python practice feed" tabindex="-1"></main>
+
+<nav class="tabs" aria-label="Sections">
+  <button id="tMap">🗺️ Map</button>
+  <button id="tFeed">⬆️ Feed</button>
+  <button id="tLab">🧪 Lab</button>
+  <button id="tMe">🙂 Me</button>
+</nav>
+
+<dialog id="sheetMap" class="sheet" aria-label="Course map"><div class="sheet-in" id="mapBody"></div></dialog>
+<dialog id="sheetLab" class="sheet" aria-label="Python lab"><div class="sheet-in" id="labBody"></div></dialog>
+<dialog id="sheetMe" class="sheet" aria-label="Profile and settings"><div class="sheet-in" id="meBody"></div></dialog>
+<dialog id="loot" class="loot" aria-labelledby="lootTitle">
+  <p class="loot-emoji" id="lootEmoji">🎁</p><h2 id="lootTitle"></h2><p id="lootText"></p>
+  <button class="btn main" id="lootOk">Le liya!</button>
+</dialog>
+<div id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:2rem">Is app ko chalane ke liye JavaScript on karo.</p></noscript>
+
+<script src="content.js"></script>
+<script>
+"use strict";
+/* ================= HELPERS ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const today = (o = 0) => { const d = new Date(); d.setDate(d.getDate() + o);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const daysBetween = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 864e5);
+function toast(msg, cls = "") { const t = document.createElement("div"); t.className = "toast " + cls; t.textContent = msg; $("#toasts").append(t); setTimeout(() => t.remove(), 2900); }
+
+/* ================= CONTENT INDEX ================= */
+const CONCEPTS = window.CONCEPTS || [];
+const CBY = Object.fromEntries(CONCEPTS.map((c, i) => [c.id, {...c, idx:i}]));
+const TASK = {}; CONCEPTS.forEach(c => c.tasks.forEach(t => { TASK[t.id] = {...t, cid:c.id}; }));
+const QB = {}; CONCEPTS.forEach(c => c.test.forEach((q, i) => { QB[c.id + "-q" + i] = {...q, cid:c.id}; }));
+const INTERVALS = [1, 2, 4, 7, 14, 30];
+const GOAL = 3;
+const LEVELS = ["Print wala","Variable veer","Loop master","Function fighter","Debugger","Pythonista","Code ninja","Data wizard","AI engineer"];
+
+/* ================= STATE ================= */
+const STORE = "jp_v1";
+const DEFAULT = {v:1,xp:0,streak:0,lastGoalDay:"",freezes:2,freezeDay:"",day:"",cardsToday:0,mysteryDay:"",total:0,
+  lines:0,linesDay:"",linesToday:0,clean:0,badges:{},done:{},stars:{},secrets:{},unlocked:0,cur:CONCEPTS[0]?.id,
+  review:{},redo:{},drafts:{},typeCount:{},lab:"# Yahan kuch bhi try karo\nprint('Hello, Jugaad!')\n",seenIntro:false};
+function load() { let s = null; try { s = JSON.parse(localStorage.getItem(STORE)); } catch {} return Object.assign(JSON.parse(JSON.stringify(DEFAULT)), s || {}); }
+let S = load();
+if (!CBY[S.cur]) S.cur = CONCEPTS[0].id;
+let saveTimer = null;
+function save() { clearTimeout(saveTimer); try { localStorage.setItem(STORE, JSON.stringify(S)); } catch { toast("Progress save nahi hua — browser storage full ya block hai."); } hud(); }
+function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 700); }
+const level = () => 1 + Math.floor(S.xp / 200);
+const levelName = () => LEVELS[Math.min(level() - 1, LEVELS.length - 1)];
+function shownStreak() { if (!S.lastGoalDay) return 0; const gap = daysBetween(S.lastGoalDay, today()); return gap <= 1 || gap - 1 <= S.freezes ? S.streak : 0; }
+function dayRoll() { if (S.day !== today()) { S.day = today(); S.cardsToday = 0; } if (S.linesDay !== today()) { S.linesDay = today(); S.linesToday = 0; } }
+function hud() {
+  const st = shownStreak(), doneToday = S.lastGoalDay === today();
+  $("#hStreak").textContent = "🔥 " + st; $("#hStreak").classList.toggle("risk", !doneToday && st > 0);
+  $("#hFreeze").textContent = "🧊 " + S.freezes;
+  $("#hGoal").textContent = "🎯 " + Math.min(S.day === today() ? S.cardsToday : 0, GOAL) + "/" + GOAL;
+  $("#hXP").textContent = "⚡ L" + level();
+}
+
+/* ================= PYTHON ENGINE ================= */
+let worker = null, pyState = "loading", seq = 0;
+const pending = new Map(), waiters = [];
+function setPy(state) { pyState = state; $("#hPy").textContent = state === "ready" ? "🐍 ✓" : state === "fail" ? "🐍 ✗" : "🐍 ⏳";
+  $("#hPy").title = state === "ready" ? "Python ready" : state === "fail" ? "Python load nahi hua — tap karke dobara try karo" : "Python load ho raha hai"; }
+function startWorker() {
+  setPy("loading");
+  worker = new Worker("py-worker.js");
+  worker.onmessage = e => {
+    const m = e.data;
+    if (m.type === "ready") { setPy("ready"); waiters.splice(0).forEach(w => w.ok()); }
+    else if (m.type === "fatal") { setPy("fail"); waiters.splice(0).forEach(w => w.no(new Error(m.error))); }
+    else if (m.type === "result") { const p = pending.get(m.id); if (p) { clearTimeout(p.t); pending.delete(m.id); p.resolve(m.res); } }
+  };
+  worker.onerror = () => { setPy("fail"); waiters.splice(0).forEach(w => w.no(new Error("worker"))); };
+}
+$("#hPy").onclick = () => { if (pyState === "fail") { worker?.terminate(); startWorker(); } else toast(pyState === "ready" ? "🐍 Python ready hai" : "🐍 Python load ho raha hai (pehli baar ~10 MB)…"); };
+async function runPy(code, tests = [], setup = "") {
+  if (!worker) startWorker();
+  if (pyState !== "ready") await new Promise((ok, no) => waiters.push({ok, no}));
+  return new Promise(resolve => {
+    const id = ++seq;
+    const t = setTimeout(() => {
+      if (!pending.has(id)) return;
+      pending.delete(id); worker.terminate(); worker = null;
+      for (const [, p] of pending) { clearTimeout(p.t); p.resolve({timeout:true}); } pending.clear();
+      startWorker(); resolve({timeout:true});
+    }, 5000);
+    pending.set(id, {resolve, t});
+    worker.postMessage({id, code, tests, setup});
+  });
+}
+const FRIENDLY = {
+  NameError:"Python ko yeh naam nahi mila. Spelling check karo, variable pehle banao — aur agar code mein `___` bacha hai toh use bharo.",
+  SyntaxError:"Code ki 'grammar' galat hai. Colon (:), bracket, quote, ya bacha hua `___` check karo.",
+  IndentationError:"Spacing galat hai. `if/for/def` ke andar wali lines 4 space aage honi chahiye, aur ek block ki saari lines barabar.",
+  TabError:"Tabs aur spaces mix ho gaye. Sirf 4 spaces use karo (⇥ button).",
+  TypeError:"Galat type ki cheezein mila di — jaise string + int, ya None par kaam karna. Values ke types check karo.",
+  IndexError:"List mein utna index hai hi nahi. Index 0 se shuru hota hai; length `len()` se check karo.",
+  KeyError:"Dict mein yeh key nahi hai. `.get(key, default)` use karo ya pehle key check karo.",
+  ZeroDivisionError:"0 se divide kar rahe ho. Pehle check karo ki divisor 0 to nahi.",
+  ValueError:"Type sahi hai par value galat — jaise `int('abc')`.",
+  AttributeError:"Is object par yeh method/attribute nahi hota — jaise list par `.upper()`, ya None par kuch bhi.",
+  UnboundLocalError:"Function ke andar variable ko value dene se pehle use kar liya.",
+  RecursionError:"Function khud ko bina ruke call kar raha hai — base case check karo.",
+  AssertionError:"Tumhara `assert` fail hua — condition sach nahi nikli.",
+  ModuleNotFoundError:"Yeh module is browser-Python mein nahi hai. Week 1 ke liye standard library kaafi hai.",
+  OSError:"`input()` is app mein nahi chalta — value seedha variable mein likh do."
+};
+const friendly = t => FRIENDLY[t] || "Error ka naam aur message dhyan se padho — neeche wali line hi asli wajah batati hai.";
+function runText(res) {
+  if (res.timeout) return {txt:"⏱️ 5 second se zyada chala — shayad infinite loop hai (while ki condition kabhi False nahi hui?). Code rok diya.", bad:true};
+  let txt = res.out || "";
+  if (res.err) txt += (txt ? "\n" : "") + `❌ ${res.err.type}${res.err.line ? " (line " + res.err.line + ")" : ""}: ${res.err.msg}\n💡 ${friendly(res.err.type).replace(/`/g, "")}`;
+  return {txt: txt || "(kuch print nahi hua — print() lagao)", bad: !!res.err};
+}
+
+/* ================= CODE EDITOR ================= */
+const KEYS = [["tab","⇥"],["(","("],[")",")"],[":",":"],["[","["],["]","]"],['"','"'],["'","'"],["=","="],["_","_"],[".","."],[",",","],["{","{"],["}","}"],["#","#"]];
+const editorHTML = () => `<div class="ed"><div class="editor"><pre class="gutter" aria-hidden="true"></pre><textarea class="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Python code editor (Esc dabake bahar niklo)"></textarea></div>
+<div class="keys" aria-label="Code symbols">${KEYS.map(([k, l]) => `<button type="button" data-k="${esc(k)}" aria-label="${k === "tab" ? "4 spaces" : esc(k)}">${esc(l)}</button>`).join("")}</div></div>`;
+function insertAt(ta, text) { ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, "end"); ta.dispatchEvent(new Event("input")); }
+function setupEditor(root, value, onChange) {
+  const ta = root.querySelector("textarea.code"), gut = root.querySelector(".gutter");
+  let bad = 0;
+  const paint = () => { const n = ta.value.split("\n").length; let h = "";
+    for (let i = 1; i <= n; i++) h += (i === bad ? `<span class="bad">${i}</span>` : i) + "\n";
+    gut.innerHTML = h; ta.rows = Math.min(18, Math.max(6, n + 1)); gut.scrollTop = ta.scrollTop; };
+  ta.value = value; paint();
+  ta.addEventListener("input", () => { bad = 0; paint(); onChange?.(ta.value); });
+  ta.addEventListener("scroll", () => { gut.scrollTop = ta.scrollTop; });
+  ta.addEventListener("keydown", e => {
+    const s = ta.selectionStart, v = ta.value, ls = v.lastIndexOf("\n", s - 1) + 1, before = v.slice(ls, s);
+    if (e.key === "Escape") { ta.blur(); return; }
+    if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); insertAt(ta, "    "); }
+    else if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); const m = v.slice(ls).match(/^ {1,4}/);
+      if (m) { ta.setRangeText("", ls, ls + m[0].length, "preserve"); ta.selectionStart = ta.selectionEnd = Math.max(ls, s - m[0].length); ta.dispatchEvent(new Event("input")); } }
+    else if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) { e.preventDefault(); let ind = (before.match(/^ */) || [""])[0];
+      if (/:\s*$/.test(before)) ind += "    "; insertAt(ta, "\n" + ind); }
+    else if (e.key === "Backspace" && ta.selectionStart === ta.selectionEnd && before.length && /^ +$/.test(before) && before.length % 4 === 0) {
+      e.preventDefault(); ta.setRangeText("", s - 4, s, "end"); ta.dispatchEvent(new Event("input")); }
+  });
+  root.querySelectorAll(".keys button").forEach(b => { b.addEventListener("pointerdown", ev => ev.preventDefault());
+    b.onclick = () => { ta.focus(); insertAt(ta, b.dataset.k === "tab" ? "    " : b.dataset.k); }; });
+  return {get:() => ta.value, set:v => { ta.value = v; bad = 0; paint(); onChange?.(v); }, mark:n => { bad = n || 0; paint(); }};
+}
+
+/* ================= CODE BLOCKS (runnable) ================= */
+const codeBlock = (code, locked = false) => `<div class="cb" data-code="${esc(code)}"><pre class="codebox">${esc(code.replace(/\n$/, ""))}</pre>
+<div class="row ${locked ? "locked" : ""}"><button class="btn tiny runcode">▶️ Run</button><button class="btn tiny tolab">✏️ Lab mein badlo</button></div><pre class="outbox" hidden></pre></div>`;
+document.addEventListener("click", async e => {
+  const r = e.target.closest(".runcode");
+  if (r) { const cb = r.closest(".cb"), o = cb.querySelector(".outbox"); o.hidden = false; o.classList.remove("bad");
+    o.textContent = pyState === "ready" ? "Chal raha hai…" : "🐍 Python load ho raha hai (pehli baar thoda time lagega)…"; r.disabled = true;
+    try { const x = runText(await runPy(cb.dataset.code)); o.textContent = x.txt; o.classList.toggle("bad", x.bad); }
+    catch { o.textContent = "Python engine load nahi hua. Internet check karke 🐍 par tap karo."; o.classList.add("bad"); }
+    r.disabled = false; return; }
+  const l = e.target.closest(".tolab"); if (l) { openLab(l.closest(".cb").dataset.code); return; }
+});
+
+/* ================= REWARDS ================= */
+let combo = 0, sessionDone = 0, nextLootAt = 6 + Math.floor(Math.random() * 3);
+const BADGES = [
+ ["first","👣","Pehla kadam","Pehla card complete",()=>S.total>=1],
+ ["green","✅","Pehla green","Pehla coding task pass",()=>(S.typeCount.code||0)>=1],
+ ["s3","🔥","3 din","3 din ki streak",()=>S.streak>=3],
+ ["s7","🔥","Ek hafta","7 din ki streak",()=>S.streak>=7],
+ ["s30","🏆","Ek mahina","30 din ki streak",()=>S.streak>=30],
+ ["l100","⌨️","100 lines","100 lines code likha",()=>S.lines>=100],
+ ["l500","🖥️","500 lines","500 lines code likha",()=>S.lines>=500],
+ ["clean5","🧠","Bina sahare","5 tasks bina hint/solution",()=>S.clean>=5],
+ ["star3","⭐","Perfect test","Kisi concept test mein 4/4",()=>Object.values(S.stars).some(x=>x>=3)],
+ ["sec5","🔐","Secret keeper","5 Python secrets unlock",()=>Object.keys(S.secrets).length>=5],
+ ["stage1","🏅","Stage 1 clear","Saare 10 episodes pass",()=>CONCEPTS.every(c=>(S.stars[c.id]||0)>=1)],
+ ["lvl5","🚀","Level 5","Level 5 tak pahunche",()=>level()>=5]
+];
+function checkBadges() { for (const [id, e, n, , test] of BADGES) if (!S.badges[id] && test()) { S.badges[id] = today(); setTimeout(() => toast(`${e} Naya badge: ${n}!`), 1200); } }
+function goalHit() {
+  const t = today(); if (S.lastGoalDay === t) return;
+  const gap = S.lastGoalDay ? daysBetween(S.lastGoalDay, t) : 999;
+  if (gap === 1) S.streak++;
+  else if (S.lastGoalDay && gap - 1 <= S.freezes) { S.freezes -= gap - 1; S.streak++; setTimeout(() => toast(`🧊 ${gap - 1} freeze use hua — streak bach gayi!`), 600); }
+  else S.streak = 1;
+  S.lastGoalDay = t; setTimeout(() => toast(`🔥 Daily goal done! Streak: ${S.streak} din`), 300);
+}
+function award(type, base) {
+  let mult = 1, note = "";
+  if (S.mysteryDay !== today()) { S.mysteryDay = today(); mult = 2; note = "🎁 Aaj ka mystery bonus"; }
+  else { const r = Math.random(); if (r < .05) { mult = 3; note = "💥 Jackpot · 3x"; } else if (r < .2) { mult = 2; note = "⚡ Double XP"; } }
+  combo++;
+  const bonus = combo % 5 === 0 ? 10 : 0, xp = base * mult + bonus, oldL = level();
+  S.xp += xp; S.total++; S.typeCount[type] = (S.typeCount[type] || 0) + 1;
+  dayRoll(); S.cardsToday++;
+  if (S.cardsToday === GOAL) goalHit();
+  if (S.cardsToday >= 10 && S.freezeDay !== today() && S.freezes < 2) { S.freezes++; S.freezeDay = today(); setTimeout(() => toast("🧊 10 cards! Ek streak freeze mila"), 900); }
+  sessionDone++;
+  if (sessionDone >= nextLootAt) { nextLootAt = sessionDone + 6 + Math.floor(Math.random() * 4); setTimeout(openLoot, 1100); }
+  checkBadges(); save();
+  toast(`+${xp} XP${note ? " · " + note : ""}${bonus ? ` · 🔗 ${combo} combo` : ""}`, "xp");
+  if (level() > oldL) setTimeout(() => toast(`🎉 Level up! Ab aap: ${levelName()}`), 800);
+  return xp;
+}
+function done(el, xp) {
+  if (el._done) return; el._done = true;
+  const c = el._c, st = el.querySelector(".stamp");
+  if (c.key && S.done[c.key]) { st.hidden = false; st.textContent = "✓ Dobara practice · agla card ⬆️"; return; }
+  if (c.key) S.done[c.key] = true;
+  const got = award(c.type === "fill" || c.type === "bug" || c.type === "write" || c.type === "redo" ? "code" : c.type, xp);
+  st.hidden = false; st.textContent = `✓ +${got} XP · agla card ⬆️`;
+}
+function openLoot() {
+  if (document.querySelector("dialog[open]")) { nextLootAt = sessionDone + 1; return; }
+  let e, t, d;
+  if (Math.random() < .3 && S.freezes < 2) { S.freezes++; e = "🧊"; t = "Streak freeze!"; d = "Ek din miss hua toh bhi streak nahi tootegi."; }
+  else { const n = pick([20, 30, 40, 50]); S.xp += n; e = "💰"; t = `+${n} XP bonus`; d = "Bas aise hi lage raho — har card tumhe AI engineer ke kareeb le ja raha hai."; }
+  save(); $("#lootEmoji").textContent = e; $("#lootTitle").textContent = t; $("#lootText").textContent = d; $("#loot").showModal();
+}
+$("#lootOk").onclick = () => $("#loot").close();
+
+/* ================= AI (backup chain) ================= */
+const PROVIDERS = {
+  gemini:{label:"Gemini", keyRe:/^(?:AIza|AQ\.)[A-Za-z0-9._-]+$/, keyHint:"AIza… ya AQ.…", def:"gemini-3.1-flash-lite"},
+  groq:{label:"Groq", keyRe:/^gsk_[A-Za-z0-9._-]+$/, keyHint:"gsk_…", def:"openai/gpt-oss-20b"},
+  xai:{label:"Grok (xAI)", keyRe:/^xai-[A-Za-z0-9._-]+$/, keyHint:"xai-…", def:""},
+  ollama:{label:"Ollama (local)", keyRe:null, keyHint:"", def:""}
+};
+const AIS = {remember:false, list:[]}; // list order = try order
+try {
+  localStorage.removeItem("jfa_user_api_key");
+  const raw = JSON.parse(localStorage.getItem("jf_ai") || sessionStorage.getItem("jf_ai") || "null");
+  if (raw && Array.isArray(raw.list)) { AIS.remember = !!raw.remember; AIS.list = raw.list.filter(c => c && PROVIDERS[c.provider]); }
+  else if (raw && (raw.key || raw.provider === "ollama")) { // v3.0 single-key settings
+    AIS.remember = !!raw.remember;
+    AIS.list = [{id:"c" + Date.now(), provider: raw.provider === "ollama" ? "ollama" : (raw.key || "").startsWith("gsk_") ? "groq" : "gemini",
+      key:raw.key || "", model:raw.model || "", url:raw.ollama || "http://localhost:11434"}];
+  }
+} catch {}
+function persistAI() {
+  try {
+    localStorage.removeItem("jf_ai"); sessionStorage.removeItem("jf_ai");
+    if (!AIS.list.length) return;
+    (AIS.remember ? localStorage : sessionStorage).setItem("jf_ai", JSON.stringify({remember:AIS.remember, list:AIS.list}));
+  } catch {}
+}
+const aiReady = () => AIS.list.length > 0;
+const modelOf = c => c.model || PROVIDERS[c.provider].def;
+const connLabel = c => PROVIDERS[c.provider].label + (modelOf(c) ? " · " + modelOf(c) : "");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const cool = {}; // connection id -> time until which it is tried last
+const TRANSIENT = [408, 429, 500, 502, 503, 504];
+const isRetryable = e => TRANSIENT.includes(e?.status) || e?.name === "TimeoutError" || e?.name === "AbortError" || e instanceof TypeError;
+
+function httpError(status, b) {
+  const bad = b?.error?.details?.some?.(d => d.reason === "API_KEY_INVALID");
+  const m = status === 401 || bad ? "Key reject ho gayi (401)."
+    : status === 403 ? "Access denied (403)."
+    : status === 404 ? "Model nahi mila (404)."
+    : status === 429 ? "Limit khatam (429)."
+    : status === 503 ? "Server busy (503)."
+    : "Error (HTTP " + status + ").";
+  const e = new Error(m); e.status = status; return e;
+}
+function parseJSON(raw) {
+  const t = String(raw || "").replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/, "").trim();
+  try { return JSON.parse(t); } catch {}
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) return JSON.parse(t.slice(a, b + 1));
+  throw new SyntaxError("not json");
+}
+async function callOne(c, instruction, payload, fields) {
+  const message = JSON.stringify(payload), model = modelOf(c);
+  let url, headers = {"Content-Type":"application/json"}, body;
+  const chat = [{role:"system", content:instruction + " Reply with JSON only."}, {role:"user", content:message}];
+  if (c.provider === "gemini") {
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    headers["x-goog-api-key"] = c.key;
+    body = {systemInstruction:{parts:[{text:instruction}]}, contents:[{role:"user",parts:[{text:message}]}], generationConfig:{responseMimeType:"application/json"}};
+  } else if (c.provider === "groq") {
+    url = "https://api.groq.com/openai/v1/chat/completions"; headers.Authorization = "Bearer " + c.key;
+    body = {model, response_format:{type:"json_object"}, messages:chat};
+  } else if (c.provider === "xai") {
+    if (!model) throw new Error("Grok ke liye Model ID chahiye.");
+    url = "https://api.x.ai/v1/chat/completions"; headers.Authorization = "Bearer " + c.key;
+    body = {model, messages:chat};
+  } else {
+    if (!model) throw new Error("Ollama ka model chuno.");
+    url = (c.url || "http://localhost:11434").replace(/\/+$/, "") + "/api/chat";
+    body = {model, stream:false, format:"json", messages:chat};
+  }
+  const res = await fetch(url, {method:"POST", headers, body:JSON.stringify(body), signal:AbortSignal.timeout(c.provider === "ollama" ? 90000 : 15000)});
+  if (!res.ok) throw httpError(res.status, await res.json().catch(() => null));
+  const data = await res.json();
+  const raw = c.provider === "gemini" ? (data.candidates?.[0]?.content?.parts || []).filter(x => x.text && !x.thought).map(x => x.text).join("")
+    : c.provider === "ollama" ? data.message?.content : data.choices?.[0]?.message?.content;
+  const result = parseJSON(raw);
+  if (!fields) return result;
+  if (!result || !fields.every(f => typeof result[f] === "string" && result[f].trim())) throw new Error("Jawab adhoora tha.");
+  return Object.fromEntries(fields.map(f => [f, result[f].trim().slice(0, 900)]));
+}
+// Tries each connection in order; skips busy ones to the end; one quick retry on 5xx.
+async function askAIMeta(instruction, payload, fields, only) {
+  const now = Date.now();
+  const list = only ? [only] : [...AIS.list].sort((a, b) => ((cool[a.id] || 0) > now) - ((cool[b.id] || 0) > now));
+  if (!list.length) throw new Error("AI connected nahi hai.");
+  const failed = [];
+  for (const c of list) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const result = await callOne(c, instruction, payload, fields);
+        delete cool[c.id];
+        if (failed.length && !only) toast(`⚠️ ${failed.map(f => f.who).join(", ")} busy — ${connLabel(c)} se jawab liya`);
+        return {result, via:c, failed};
+      } catch (e) {
+        if (attempt === 0 && !only && [500, 502, 503, 504].includes(e.status)) { await sleep(700); continue; }
+        if (isRetryable(e)) cool[c.id] = Date.now() + 90e3;
+        failed.push({who:connLabel(c), msg:errMsg(e)});
+        break;
+      }
+    }
+  }
+  const err = new Error(failed.map(f => f.who + ": " + f.msg).join(" · ")); err.all = failed; throw err;
+}
+const askAI = async (instruction, payload, fields, only) => (await askAIMeta(instruction, payload, fields, only)).result;
+
+async function listModels(c) {
+  let url, headers = {};
+  if (c.provider === "gemini") { url = "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200"; headers["x-goog-api-key"] = c.key; }
+  else if (c.provider === "groq") { url = "https://api.groq.com/openai/v1/models"; headers.Authorization = "Bearer " + c.key; }
+  else if (c.provider === "xai") { url = "https://api.x.ai/v1/models"; headers.Authorization = "Bearer " + c.key; }
+  else url = (c.url || "http://localhost:11434").replace(/\/+$/, "") + "/api/tags";
+  const res = await fetch(url, {headers, signal:AbortSignal.timeout(15000)});
+  if (!res.ok) throw httpError(res.status, await res.json().catch(() => null));
+  const d = await res.json();
+  if (c.provider === "gemini") return (d.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
+  if (c.provider === "ollama") return (d.models || []).map(m => m.name);
+  return (d.data || []).map(m => m.id);
+}
+function errMsg(e) {
+  if (e?.name === "TimeoutError" || e?.name === "AbortError") return "Time out ho gaya.";
+  if (e instanceof TypeError) return "Pahunch nahi paaye (internet / CORS / Ollama band?).";
+  if (e instanceof SyntaxError) return "Jawab samajh nahi aaya.";
+  return e?.message || "AI abhi available nahi hai.";
+}
+
+
+const TUTOR = "You are a patient Python tutor for a Hindi-speaking Indian beginner who gets bored and gives up easily. Write in simple Hinglish using Roman letters (Hindi words written in English script), never Devanagari. Short sentences, friendly, never shame. Return only a JSON object whose values are all strings.";
+const AIP = {
+  hint: TUTOR + " The learner is stuck on a coding task. Give ONLY the next small step as a hint or a guiding question, max 3 sentences. Do NOT give the full solution or complete code; at most one tiny code fragment. Field: hint.",
+  err: TUTOR + " Explain the Python error the learner got: what it means, why it happened in THEIR code (mention the line), and a hint to fix it — without writing the full solution. Fields: explain, fix_hint.",
+  review: TUTOR + " The learner's code already passes all tests. Praise one specific thing, give 1-2 tips to make it more Pythonic or readable, and show a short improved version. Fields: review, pro_version (Python code only, no markdown fences).",
+  simpler: TUTOR + " Explain this Python concept again using a desi real-life analogy (chai stall, cricket, train, kirana shop, family) in 3-4 sentences, then give a tiny runnable code example (no input(), max 8 lines, must print something). Fields: analogy, example (Python code only, no markdown fences)."
+};
+const stripFence = s => String(s).replace(/^\s*```(?:python)?\s*/i, "").replace(/```\s*$/, "").trim() + "\n";
+const needAI = () => { if (aiReady()) return true; toast("🤖 Pehle 🙂 Me → AI connections mein AI jodo"); return false; };
+
+/* ================= CARDS ================= */
+function shell(c, chip, body) {
+  const el = document.createElement("section");
+  el.className = "card t-" + c.type; el._c = c;
+  el.innerHTML = `<div class="inner"><p class="chip">${chip}</p>${body}<div class="out" aria-live="polite"></div><p class="stamp" hidden></p></div>`;
+  if (c.key && S.done[c.key]) { const st = el.querySelector(".stamp"); st.hidden = false; st.textContent = "✓ Pehle kar chuke ho — dobara practice kar sakte ho"; }
+  return el;
+}
+const outOf = el => el.querySelector(".out");
+const epLabel = C => `Episode ${C.idx + 1} · ${C.emoji} ${esc(C.title)}`;
+
+function renderLearn1(c) {
+  const C = CBY[c.cid];
+  const el = shell(c, "📖 " + epLabel(C), `
+<h2 class="big">${esc(C.title)}</h2><p class="mean">${esc(C.tagline)}</p>
+<div class="sec"><p class="lbl">🎣 Pehle socho</p><p>${md(C.hook.q)}</p>${codeBlock(C.hook.code)}</div>
+<div class="sec"><p class="lbl">💡 Asli baat</p><p>${md(C.idea)}</p>${codeBlock(C.example)}</div>
+<div class="row"><button class="btn main got">Samajh gaya ✓</button><button class="btn simpler">🤖 Aur aasaan samjhao</button></div>
+<div class="aimore sec"></div>`);
+  el.querySelector(".got").onclick = () => done(el, 4);
+  el.querySelector(".simpler").onclick = async e => {
+    if (!needAI()) return; const b = e.currentTarget, box = el.querySelector(".aimore"); b.disabled = true; box.innerHTML = `<p class="wait">AI desi example soch raha hai…</p>`;
+    try { const r = await askAI(AIP.simpler, {concept:C.title, explanation:C.idea, example:C.example}, ["analogy","example"]);
+      box.innerHTML = `<div class="fb"><p class="lbl">🤖 Desi tareeke se</p><p>${md(r.analogy)}</p>${codeBlock(stripFence(r.example))}</div>`; }
+    catch (err) { box.innerHTML = `<p class="miss small">AI nahi chala: ${esc(err.all ? "saare AI fail" : errMsg(err))}</p>`; }
+    b.disabled = false;
+  };
+  return el;
+}
+function renderLearn2(c) {
+  const C = CBY[c.cid];
+  const el = shell(c, "🔍 Andar ki baat · " + esc(C.title), `
+<h2 class="say">Jo pro developers jaante hain</h2>
+<ul class="pts">${C.inside.map(x => `<li>${md(x)}</li>`).join("")}</ul>
+<div class="sec"><p class="lbl">💪 Tagda use</p><p>${md(C.power.text)}</p>${codeBlock(C.power.code)}</div>
+<div class="sec"><p class="lbl">⚠️ Yahan log phaste hain</p><p>${md(C.trap.text)}</p>${codeBlock(C.trap.code)}</div>
+<p class="hint">🔐 Is episode mein ek chhupa hua Python Secret hai: “${esc(C.secret.title)}”. Test mein 3/4 lao toh khulega.</p>
+<div class="row"><button class="btn main got">Pro ban gaya ✓</button></div>`);
+  el.querySelector(".got").onclick = () => done(el, 4);
+  return el;
+}
+
+function optButtons(options) { return `<div class="opts">${options.map((o, i) => `<button class="opt" data-i="${i}"><pre>${esc(o)}</pre></button>`).join("")}</div>`; }
+function shuffledQ(q) { const order = shuffle(q.options.map((_, i) => i)); return {...q, options:order.map(i => q.options[i]), answer:order.indexOf(q.answer)}; }
+
+function renderPredict(c) {
+  const t = TASK[c.tid], q = shuffledQ(t);
+  const el = shell(c, "🔮 Output batao · " + esc(CBY[t.cid].title), `<p class="task">${md(t.prompt)} Pehle dimaag mein chalao, phir chuno.</p>${codeBlock(t.code, true)}${optButtons(q.options)}`);
+  el.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    const ok = +b.dataset.i === q.answer;
+    el.querySelectorAll(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === q.answer) x.classList.add("right"); });
+    if (!ok) b.classList.add("wrong");
+    el.querySelector(".cb .row").classList.remove("locked");
+    outOf(el).innerHTML = `<p class="${ok ? "hit" : "miss"}">${ok ? "✅ Sahi pakda!" : "❌ Oops! Ab Run karke khud dekho."}</p><div class="fb"><p>💡 ${md(t.why)}</p></div>`;
+    done(el, ok ? 6 : 2);
+  });
+  return el;
+}
+
+function newLines(code, starter) {
+  const base = {}; for (const l of starter.split("\n")) { const k = l.trim(); if (k) base[k] = (base[k] || 0) + 1; }
+  let n = 0; for (const l of code.split("\n")) { const k = l.trim(); if (!k || k.startsWith("#")) continue; if (base[k]) base[k]--; else n++; }
+  return n;
+}
+function renderCode(c) {
+  const t = TASK[c.tid], redo = c.type === "redo";
+  const chip = redo ? "🔁 Bina dekhe dobara likho" : ({fill:"✍️ Khaali jagah bharo", bug:"🐞 Bug pakdo", write:"🛠️ Khud likho"})[t.type];
+  const el = shell(c, chip + " · " + esc(CBY[t.cid].title), `
+<p class="task">${md(t.prompt)}</p>${redo ? `<p class="hint">Pichhli baar solution dekha tha. Ab khud likh ke dikhao — yahi asli seekhna hai.</p>` : ""}
+${editorHTML()}
+<div class="row"><button class="btn main run">▶️ Run & Test</button><button class="btn hintb">💡 Hint</button><button class="btn aihint">🤖 AI hint</button><button class="btn sol">👀 Solution</button><button class="btn tiny reset">↺ Reset</button></div>
+<div class="hintbox sec" hidden></div>`);
+  const draftKey = redo ? null : t.id;
+  const ed = setupEditor(el.querySelector(".ed"), (draftKey && S.drafts[draftKey]) || t.starter, v => { if (draftKey) { S.drafts[draftKey] = v; saveSoon(); } });
+  let usedHint = false, usedSol = false, lastRes = null, passed = false;
+  const hb = el.querySelector(".hintbox"), out = outOf(el);
+  el.querySelector(".reset").onclick = () => { ed.set(t.starter); out.innerHTML = ""; };
+  el.querySelector(".hintb").onclick = () => { usedHint = true; hb.hidden = false; hb.insertAdjacentHTML("beforeend", `<div class="fb"><p>💡 ${md(t.hint)}</p></div>`); el.querySelector(".hintb").disabled = true; };
+  el.querySelector(".aihint").onclick = async e => {
+    if (!needAI()) return; usedHint = true; const b = e.currentTarget; b.disabled = true; hb.hidden = false;
+    hb.insertAdjacentHTML("beforeend", `<p class="wait">AI soch raha hai…</p>`);
+    try { const r = await askAI(AIP.hint, {task:t.prompt, code:ed.get(), last_run:lastRes ? {error:lastRes.err, tests:lastRes.results} : "not run yet"}, ["hint"]);
+      hb.querySelector(".wait")?.remove(); hb.insertAdjacentHTML("beforeend", `<div class="fb"><p>🤖 ${md(r.hint)}</p></div>`); }
+    catch (err) { hb.querySelector(".wait")?.remove(); hb.insertAdjacentHTML("beforeend", `<p class="miss small">AI nahi chala: ${esc(err.all ? "saare AI fail" : errMsg(err))}</p>`); }
+    b.disabled = false;
+  };
+  el.querySelector(".sol").onclick = () => {
+    if (!usedSol && !confirm("Solution dekhoge toh 2 din baad yeh task 'bina dekhe dobara' card ban ke aayega. Dekhna hai?")) return;
+    usedSol = true; hb.hidden = false; el.querySelector(".sol").disabled = true;
+    hb.insertAdjacentHTML("beforeend", `<div class="fb"><p class="lbl">👀 Ek sahi solution</p><pre class="codebox">${esc(t.solution.replace(/\n$/, ""))}</pre><p class="small">Ise samjho, phir editor mein KHUD type karo (copy nahi) — haath se likhne par hi yaad rehta hai.</p></div>`);
+  };
+  el.querySelector(".run").onclick = async e => {
+    const b = e.currentTarget; b.disabled = true;
+    out.innerHTML = `<p class="wait">${pyState === "ready" ? "Tests chal rahe hain…" : "🐍 Python load ho raha hai (pehli baar ~10 MB)…"}</p>`;
+    let res;
+    try { res = await runPy(ed.get(), t.tests, t.setup || ""); }
+    catch { out.innerHTML = `<p class="miss">Python engine load nahi hua. Internet check karo, phir upar 🐍 par tap karo.</p>`; b.disabled = false; return; }
+    b.disabled = false; lastRes = res;
+    if (res.timeout) { out.innerHTML = `<div class="fb"><p class="miss">⏱️ Infinite loop?</p><p>${esc(runText(res).txt)}</p></div>`; return; }
+    ed.mark(res.err && !res.err.where ? res.err.line : 0);
+    const results = res.results || [], passN = results.filter(r => r.ok).length, all = !res.err && results.length && passN === results.length;
+    let h = "";
+    if (res.out) h += `<div class="sec"><p class="lbl">🖨️ Print output</p><pre class="outbox">${esc(res.out)}</pre></div>`;
+    if (res.err) h += `<div class="fb"><p class="strong">❌ ${esc(res.err.type)}${res.err.line && !res.err.where ? " · line " + res.err.line : ""}</p><pre class="outbox bad">${esc(res.err.msg)}</pre><p>💡 ${md(friendly(res.err.type))}</p>
+<div class="row"><button class="btn tiny explain">🤖 Error samjhao</button></div><div class="aiexp"></div></div>`;
+    if (results.length) h += `<div class="fb"><p class="strong">${all ? "🎉 Saare tests pass!" : `Tests: ${passN}/${results.length} pass`}</p><ul class="res">${results.map(r => `<li>${r.ok ? "✅" : "❌"} ${esc(r.label)}${r.ok ? "" : `<br>&nbsp;&nbsp;&nbsp;Mila: ${esc(r.got)} · Chahiye: ${esc(r.want)}`}</li>`).join("")}</ul></div>`;
+    out.innerHTML = h;
+    out.querySelector(".explain")?.addEventListener("click", async ev => {
+      if (!needAI()) return; const bb = ev.currentTarget, box = out.querySelector(".aiexp"); bb.disabled = true; box.innerHTML = `<p class="wait">AI error padh raha hai…</p>`;
+      try { const r = await askAI(AIP.err, {task:t.prompt, code:ed.get(), error:res.err}, ["explain","fix_hint"]);
+        box.innerHTML = `<p>🤖 ${md(r.explain)}</p><p>👉 ${md(r.fix_hint)}</p>`; }
+      catch (err) { box.innerHTML = `<p class="small">AI nahi chala: ${esc(err.all ? "saare AI fail" : errMsg(err))}</p>`; }
+      bb.disabled = false;
+    });
+    if (all && !passed) {
+      passed = true;
+      const n = newLines(ed.get(), t.starter); dayRoll(); S.lines += n; S.linesToday += n;
+      if (usedSol) S.redo[t.id] = today(2); else { delete S.redo[t.id]; if (!usedHint) S.clean++; }
+      const base = usedSol ? 3 : redo ? 12 : ({fill:8, bug:10, write:15})[t.type];
+      done(el, usedHint && !usedSol ? Math.round(base * .7) : base);
+      out.insertAdjacentHTML("beforeend", `<p class="small">⌨️ +${n} line${n === 1 ? "" : "s"} likhi · total ${S.lines}</p><div class="row"><button class="btn tiny review">🤖 Pro kaise likhte?</button></div><div class="aireview"></div>`);
+      out.querySelector(".review").onclick = async ev => {
+        if (!needAI()) return; const bb = ev.currentTarget, box = out.querySelector(".aireview"); bb.disabled = true; box.innerHTML = `<p class="wait">AI code review kar raha hai…</p>`;
+        try { const r = await askAI(AIP.review, {task:t.prompt, code:ed.get()}, ["review","pro_version"]);
+          box.innerHTML = `<div class="fb"><p>🤖 ${md(r.review)}</p>${codeBlock(stripFence(r.pro_version))}</div>`; }
+        catch (err) { box.innerHTML = `<p class="small">AI nahi chala: ${esc(err.all ? "saare AI fail" : errMsg(err))}</p>`; }
+        bb.disabled = false;
+      };
+    }
+  };
+  return el;
+}
+
+function quizInto(box, qs, onEnd) {
+  let i = 0, right = 0; const res = [];
+  const show = () => {
+    const q = qs[i];
+    box.innerHTML = `<div class="dots">${qs.map((_, k) => `<span class="${k <= i ? "on" : ""}"></span>`).join("")}</div>
+<p class="task">Q${i + 1}/${qs.length} · ${md(q.q)}</p>${q.code ? `<pre class="codebox">${esc(q.code.replace(/\n$/, ""))}</pre>` : ""}${optButtons(q.options)}<div class="qfb"></div>`;
+    box.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+      const ok = +b.dataset.i === q.answer; if (ok) right++; res.push({qid:q.qid, ok});
+      box.querySelectorAll(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === q.answer) x.classList.add("right"); });
+      if (!ok) b.classList.add("wrong");
+      box.querySelector(".qfb").innerHTML = `<div class="fb"><p class="${ok ? "hit" : "miss"}">${ok ? "✅ Sahi!" : "❌ Galat"}</p><p>💡 ${md(q.why)}</p></div>
+<div class="row" style="margin-top:8px"><button class="btn main nxt">${i < qs.length - 1 ? "Agla sawaal ➡️" : "Result dekho 🏁"}</button></div>`;
+      box.querySelector(".nxt").onclick = () => { i++; if (i < qs.length) show(); else onEnd(right, res); };
+    });
+  };
+  show();
+}
+function gradeReview(qid, ok) { const c = S.review[qid] || {step:0}; c.step = ok ? Math.min(c.step + 1, INTERVALS.length - 1) : 0; c.due = today(ok ? INTERVALS[c.step] : 1); S.review[qid] = c; }
+
+function renderTest(c) {
+  const C = CBY[c.cid];
+  const el = shell(c, "🏁 Concept test · " + esc(C.title), `<h2 class="say">${C.emoji} ${esc(C.title)}: kitna samjha?</h2>
+<p class="hint">4 sawaal. 2 sahi = agla episode khulega · 3 sahi = 🔐 Secret · 4 sahi = ⭐⭐⭐</p><div class="quiz sec"></div>`);
+  const start = () => quizInto(el.querySelector(".quiz"), C.test.map((q, k) => ({...shuffledQ(q), qid:C.id + "-q" + k})), (right, res) => {
+    const stars = right >= 4 ? 3 : right === 3 ? 2 : right === 2 ? 1 : 0;
+    for (const r of res) { if (!r.ok) gradeReview(r.qid, false); else if (!S.review[r.qid]) S.review[r.qid] = {step:1, due:today(2)}; }
+    const prev = S.stars[C.id] || 0; S.stars[C.id] = Math.max(prev, stars);
+    let unlockedNext = false, newSecret = false;
+    if (stars >= 1 && S.unlocked <= C.idx && C.idx + 1 < CONCEPTS.length) { S.unlocked = C.idx + 1; unlockedNext = true; }
+    if (stars >= 2 && !S.secrets[C.id]) { S.secrets[C.id] = today(); newSecret = true; }
+    save();
+    const box = el.querySelector(".quiz");
+    box.innerHTML = `<p class="stars" aria-label="${stars} stars">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</p>
+<p class="say">${right}/4 sahi</p>
+<p>${stars === 3 ? "Perfect! Yeh concept ab tumhara hai. 🔥" : stars === 2 ? "Bahut badhiya! Ek aur sahi hota toh ⭐⭐⭐." : stars === 1 ? "Pass! Agla episode khul gaya. Galat sawaal kal review mein aayenge." : "Koi baat nahi — concept cards ek baar aur dekho, phir test do. Galti karke hi seekhte hain."}</p>
+${unlockedNext ? `<p class="strong">🔓 Agla episode unlock: ${CBY[CONCEPTS[C.idx + 1].id].emoji} ${esc(CONCEPTS[C.idx + 1].title)}</p>` : ""}
+${S.secrets[C.id] ? `<div class="secret"><p class="lbl">🔐 Python Secret${newSecret ? " — abhi unlock hua!" : ""}</p><p class="strong">${esc(C.secret.title)}</p><p>${md(C.secret.text)}</p>${codeBlock(C.secret.code)}</div>` : `<p class="hint">🔐 Secret ke liye 3/4 chahiye: “${esc(C.secret.title)}”</p>`}
+<div class="row"><button class="btn retake">🔁 Test dobara do</button></div>`;
+    box.querySelector(".retake").onclick = start;
+    if (newSecret) setTimeout(() => toast("🔐 Naya Python Secret unlock!"), 400);
+    done(el, right * 5 + (stars === 3 ? 10 : 0));
+    checkBadges(); save();
+  });
+  start();
+  return el;
+}
+
+function renderReview(c) {
+  const q0 = QB[c.qid]; if (!q0) return null;
+  const q = {...shuffledQ(q0), qid:c.qid};
+  const el = shell(c, "🧠 Yaad hai? · " + esc(CBY[q0.cid].title), `<p class="hint">Pichhle episode ka ek sawaal — dimaag ka gym 💪</p><div class="quiz sec"></div>`);
+  quizInto(el.querySelector(".quiz"), [q], (right) => {
+    gradeReview(c.qid, right === 1); save();
+    el.querySelector(".quiz").insertAdjacentHTML("beforeend", `<p class="small">Agla review: ${daysBetween(today(), S.review[c.qid].due)} din baad</p>`);
+    el.querySelector(".nxt")?.remove(); done(el, right ? 6 : 2);
+  });
+  // single-question quiz: replace the "Result" button flow with immediate grading
+  el.querySelector(".quiz").addEventListener("click", e => { if (e.target.closest(".opt")) setTimeout(() => el.querySelector(".nxt")?.click(), 0); });
+  return el;
+}
+
+function renderNext(c) {
+  const el = shell(c, "🎬 Episode khatam", `<div class="body sec"></div>`);
+  el._refresh = () => {
+    const C = CBY[c.cid], st = S.stars[C.id] || 0, nxt = CONCEPTS[C.idx + 1], body = el.querySelector(".body");
+    if (!S.done[C.id + ":test"] && st < 1) {
+      body.innerHTML = `<h2 class="say">Ek kadam baaki!</h2><p>${C.emoji} ${esc(C.title)} ka test abhi pass nahi hua. 2/4 lao aur agla episode khul jaayega.</p>
+<div class="row"><button class="btn main gotest">🏁 Test do</button></div>`;
+      body.querySelector(".gotest").onclick = () => { const t = [...$("#feed").children].find(x => x._c?.type === "test" && x._c.cid === C.id);
+        if (t) t.scrollIntoView({behavior:"smooth"}); else appendCards([{type:"test", cid:C.id, key:C.id + ":test"}], el); };
+      return false;
+    }
+    if (st < 1) {
+      body.innerHTML = `<h2 class="say">Test phir se do 💪</h2><p>Is baar 2/4 se kam aaye. Upar concept cards dekho, phir test dobara do — iss baar pakka hoga.</p>
+<div class="row"><button class="btn main gotest">🏁 Test dobara</button></div>`;
+      body.querySelector(".gotest").onclick = () => appendCards([{type:"test", cid:C.id, key:C.id + ":test"}], el);
+      return false;
+    }
+    if (!nxt) { body.innerHTML = `<p class="stars">🏆</p><h2 class="say">Stage 1 complete!</h2><p>Python core ke saare 10 episodes khatam. Map mein jaake ⭐ badhao, saare 🔐 Secrets kholo, aur Lab mein khud cheezein banao. Agla stage (Pythonic Python) jald aa raha hai!</p>`; return false; }
+    const N = CBY[nxt.id];
+    body.innerHTML = `<p class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</p><p>${C.emoji} ${esc(C.title)} done!</p>
+<p class="lbl">Agla episode</p><h2 class="big">${N.emoji} ${esc(N.title)}</h2><p class="mean">${esc(N.tagline)}</p>
+<p>🎣 ${md(N.hook.q)}</p><p class="strong">⬆️ Swipe karo — shuru!</p>`;
+    return true;
+  };
+  el._refresh();
+  return el;
+}
+
+function renderNote(c) {
+  const w = c.kind === "welcome";
+  const el = shell(c, w ? "👋 Swagat hai" : "☕ Break time", w
+    ? `<h2 class="big">Python, reels ki tarah.</h2>
+<p class="mean">Har concept ek chhota episode hai: samjho → andar ki baat → 4 chhote coding kaam → test.</p>
+<p>🎯 Roz sirf 3 cards = streak 🔥 · 🧊 2 freeze shuru se (ek din chhoot jaaye toh streak bachegi)<br>🔐 Har episode mein ek chhupa Python Secret — test mein 3/4 lao toh khulega<br>🐍 Code asli Python mein tumhare browser mein chalta hai — pehli baar ~10 MB load hoga</p>
+<p class="hint">Padhne wale cards phone par, likhne wale laptop par sabse achhe lagte hain. AI hints ke liye 🙂 Me → AI connections (English app wale connections yahan bhi chal jaate hain).</p>
+<div class="row"><button class="btn main go">Shuru karein ⬆️</button></div>`
+    : `<h2 class="big">25 minute ho gaye!</h2><p class="mean">Dimaag ko 5 minute ka break do — seekha hua aaram mein pakka hota hai.</p>
+<p>Kal ka pehla card mystery bonus wala hoga (double XP). 🎁</p><div class="row"><button class="btn main go">Thoda aur chalega ⬆️</button></div>`);
+  el.querySelector(".go").onclick = () => feed.scrollBy({top:feed.clientHeight, behavior:"smooth"});
+  return el;
+}
+const RENDER = {learn1:renderLearn1, learn2:renderLearn2, predict:renderPredict, fill:renderCode, bug:renderCode, write:renderCode, redo:renderCode,
+  test:renderTest, review:renderReview, next:renderNext, note:renderNote};
+
+/* ================= FEED ================= */
+const feed = $("#feed");
+let current = null, sessionStart = Date.now(), breakShown = false;
+const episodesIn = new Set();
+function episodeCards(cid, fromStart) {
+  const C = CBY[cid];
+  const list = [{type:"learn1", cid, key:cid + ":learn1"}, {type:"learn2", cid, key:cid + ":learn2"},
+    ...C.tasks.map(t => ({type:t.type, cid, tid:t.id, key:t.id})), {type:"test", cid, key:cid + ":test"}, {type:"next", cid}];
+  if (fromStart) return list;
+  const i = list.findIndex(x => x.type !== "next" && (x.type === "test" ? (S.stars[cid] || 0) < 1 : !S.done[x.key]));
+  return i < 0 ? list.slice(-1) : list.slice(i);
+}
+function reviewCards() {
+  const out = [];
+  const dueQ = Object.keys(S.review).filter(id => QB[id] && S.review[id].due <= today() && QB[id].cid !== S.cur).sort((a, b) => S.review[a].due.localeCompare(S.review[b].due)).slice(0, 2);
+  for (const q of dueQ) out.push({type:"review", qid:q});
+  const redo = Object.keys(S.redo).find(id => TASK[id] && S.redo[id] <= today());
+  if (redo) out.push({type:"redo", tid:redo, cid:TASK[redo].cid});
+  return out;
+}
+function appendCards(list, after) {
+  for (const c of list) {
+    if (c.type === "next") episodesIn.add(c.cid);
+    const el = RENDER[c.type](c); if (!el) continue;
+    if (after) { after.after(el); after = el; } else feed.append(el);
+    io.observe(el);
+  }
+}
+const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) activate(e.target); }, {root:feed, threshold:.6});
+function activate(el) {
+  if (current === el) return;
+  if (current && !["note","next"].includes(current._c.type) && !current._done) combo = 0;
+  current = el;
+  const c = el._c;
+  if (c.type === "note" && c.kind === "welcome" && !S.seenIntro) { S.seenIntro = true; saveSoon(); }
+  if (c.type === "next" && el._refresh()) {
+    const nxt = CONCEPTS[CBY[c.cid].idx + 1];
+    if (nxt && !episodesIn.has(nxt.id) && el === feed.lastElementChild) {
+      if (CBY[nxt.id].idx > CBY[S.cur].idx) { S.cur = nxt.id; save(); }
+      appendCards(episodeCards(nxt.id, true));
+    }
+  }
+  if (!breakShown && Date.now() - sessionStart > 25 * 60e3) { breakShown = true; appendCards([{type:"note", kind:"break"}], el); }
+}
+function startFeed(cid, fromStart) {
+  feed.innerHTML = ""; episodesIn.clear(); current = null;
+  const list = [];
+  if (!S.seenIntro) list.push({type:"note", kind:"welcome"});
+  if (!fromStart) list.push(...reviewCards());
+  list.push(...episodeCards(cid, fromStart));
+  appendCards(list); feed.scrollTop = 0;
+}
+feed.addEventListener("focusin", e => { if (e.target.matches("textarea,input")) feed.classList.add("typing"); });
+feed.addEventListener("focusout", () => setTimeout(() => { if (!feed.contains(document.activeElement) || !document.activeElement.matches("textarea,input")) feed.classList.remove("typing"); }, 300));
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input,textarea,select") || document.querySelector("dialog[open]")) return;
+  if (["ArrowDown","PageDown","j"].includes(e.key)) { e.preventDefault(); feed.scrollBy({top:feed.clientHeight, behavior:"smooth"}); }
+  if (["ArrowUp","PageUp","k"].includes(e.key)) { e.preventDefault(); feed.scrollBy({top:-feed.clientHeight, behavior:"smooth"}); }
+});
+
+/* ================= SHEETS ================= */
+function openSheet(d) { document.querySelectorAll("dialog.sheet[open]").forEach(x => x.close()); d.showModal(); }
+const closeBtn = id => `<div class="top"><button class="btn tiny" onclick="document.getElementById('${id}').close()">✕ Band karo</button></div>`;
+$("#tFeed").onclick = () => document.querySelectorAll("dialog.sheet[open]").forEach(x => x.close());
+$("#tMap").onclick = () => { renderMap(); openSheet($("#sheetMap")); };
+$("#tLab").onclick = () => openLab();
+$("#tMe").onclick = () => { renderMe(); openSheet($("#sheetMe")); };
+
+function renderMap() {
+  const passed = CONCEPTS.filter(c => (S.stars[c.id] || 0) >= 1).length, secN = Object.keys(S.secrets).length;
+  $("#mapBody").innerHTML = closeBtn("sheetMap") + `<h2>🗺️ Stage 1: Python Core</h2><p class="muted">${passed}/${CONCEPTS.length} episodes pass · ${secN}/${CONCEPTS.length} secrets</p>
+<div class="bar"><span style="width:${(passed / CONCEPTS.length * 100).toFixed(0)}%"></span></div>
+<div class="panel"><ul class="clean">${CONCEPTS.map((c, i) => { const st = S.stars[c.id] || 0, open = i <= S.unlocked;
+  return `<li class="${open ? "" : "lock"}"><p class="strong">${open ? (st ? "✅" : "▶️") : "🔒"} Episode ${i + 1} · ${c.emoji} ${esc(c.title)}</p><p class="muted small">${esc(c.tagline)} · ${"★".repeat(st)}${"☆".repeat(3 - st)}</p>
+<div class="row"><button class="btn tiny goep" data-id="${c.id}" ${open ? "" : "disabled"}>${st ? "Dobara kholo" : open ? "Kholo" : "Locked"}</button></div></li>`; }).join("")}</ul></div>
+<div class="panel"><h3>🔐 Python Secrets (${secN}/${CONCEPTS.length})</h3><p class="muted small">Har episode ke test mein 3/4 lao aur ek aisi baat kholo jo zyada tar log nahi jaante.</p>
+<ul class="clean">${CONCEPTS.map((c, i) => S.secrets[c.id]
+  ? `<li><p class="strong">🔓 ${esc(c.secret.title)}</p><p>${md(c.secret.text)}</p>${codeBlock(c.secret.code)}</li>`
+  : `<li class="lock"><p class="strong">🔒 ${esc(c.secret.title)}</p><p class="small">Episode ${i + 1} (${esc(c.title)}) ke test mein 3/4 lao</p></li>`).join("")}</ul></div>`;
+  $("#mapBody").querySelectorAll(".goep").forEach(b => b.onclick = () => { $("#sheetMap").close(); startFeed(b.dataset.id, true); });
+}
+
+function openLab(code) {
+  if (code != null) { S.lab = code; save(); }
+  $("#labBody").innerHTML = closeBtn("sheetLab") + `<h2>🧪 Lab</h2><p class="muted">Yahan kuch bhi likho aur chalao. Koi test nahi, koi tension nahi — bas khelo.</p>
+<div class="panel" style="--c-bg:var(--surface);--c-fg:var(--text)">${editorHTML()}
+<div class="row"><button class="btn main labrun">▶️ Run</button><button class="btn tiny labclear">🧹 Saaf karo</button></div><pre class="outbox" id="labOut" hidden></pre></div>`;
+  const ed = setupEditor($("#labBody .ed"), S.lab, v => { S.lab = v; saveSoon(); });
+  $("#labBody .labclear").onclick = () => ed.set("");
+  $("#labBody .labrun").onclick = async e => {
+    const b = e.currentTarget, o = $("#labOut"); b.disabled = true; o.hidden = false; o.classList.remove("bad");
+    o.textContent = pyState === "ready" ? "Chal raha hai…" : "🐍 Python load ho raha hai…";
+    try { const res = await runPy(ed.get()); const x = runText(res); o.textContent = x.txt; o.classList.toggle("bad", x.bad); ed.mark(res.err?.line); }
+    catch { o.textContent = "Python engine load nahi hua. Internet check karo."; o.classList.add("bad"); }
+    b.disabled = false;
+  };
+  openSheet($("#sheetLab"));
+}
+
+function renderMe() {
+  const into = S.xp % 200, todayN = S.day === today() ? S.cardsToday : 0, linesT = S.linesDay === today() ? S.linesToday : 0;
+  $("#meBody").innerHTML = closeBtn("sheetMe") + `<h2>${esc(levelName())}</h2><p class="muted">Level ${level()} · ${S.xp} XP</p>
+<div class="bar"><span style="width:${(into / 2).toFixed(1)}%"></span></div><p class="muted small">Agle level tak ${200 - into} XP</p>
+<div class="panel"><div class="kpis">
+<div class="kpi"><b>🔥 ${shownStreak()}</b><span class="muted">din ki streak</span></div>
+<div class="kpi"><b>🧊 ${S.freezes}/2</b><span class="muted">streak freeze</span></div>
+<div class="kpi"><b>🎯 ${todayN}</b><span class="muted">aaj ke cards</span></div>
+<div class="kpi"><b>⌨️ ${S.lines}</b><span class="muted">lines likhi (aaj ${linesT})</span></div>
+<div class="kpi"><b>📚 ${CONCEPTS.filter(c => (S.stars[c.id] || 0) >= 1).length}/${CONCEPTS.length}</b><span class="muted">episodes pass</span></div>
+<div class="kpi"><b>🔐 ${Object.keys(S.secrets).length}</b><span class="muted">secrets</span></div></div></div>
+<div class="panel"><h3>Badges</h3><div class="badges">${BADGES.map(([id, e, n, d]) => `<div class="badge ${S.badges[id] ? "" : "off"}"><b>${e} ${esc(n)}</b><span class="small muted">${esc(d)}</span></div>`).join("")}</div></div>
+<div class="panel"><h3>🤖 AI connections</h3>
+<p class="muted small">English app wale connections yahan bhi dikhte hain (agar wahan "yaad rakho" tick tha). Upar wala pehle try hota hai. Woh fail ho (503, limit, timeout) toh agla apne aap try hota hai. Sab fail ho tabhi offline check chalta hai.</p>
+<ul class="clean" id="connList"></ul>
+<h3 style="margin-top:14px">➕ Backup connection jodo</h3>
+<label for="cProv">Provider</label>
+<select id="cProv">${Object.entries(PROVIDERS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("")}</select>
+<div id="cKeyBox"><label for="cKey">API key</label><input id="cKey" type="password" autocomplete="off"></div>
+<div id="cUrlBox" hidden><label for="cUrl">Ollama URL</label><input id="cUrl" value="http://localhost:11434"></div>
+<label for="cModel">Model</label>
+<div class="row"><input id="cModel" list="cModels" style="flex:1;width:auto" placeholder="Khaali = default"><button class="btn tiny" id="cList">Models dikhao</button></div>
+<datalist id="cModels"></datalist>
+<p class="muted small">Tip: same Gemini key ko doosre model ke saath bhi jod sakte ho — 503 aksar ek hi model par aata hai.</p>
+<label class="check"><input type="checkbox" id="aiRemember" ${AIS.remember ? "checked" : ""}> Is device par keys yaad rakho</label>
+<div class="row" style="margin-top:10px"><button class="btn main" id="cAdd">Test karke jodo</button><button class="btn" id="cTestAll">Sab test karo</button></div>
+<p class="small" id="aiNote" role="status"></p></div>
+
+
+<div class="panel"><h3>💾 Backup</h3><p class="muted small">Progress isi browser mein save hota hai. Phone/laptop badalne se pehle backup le lo.</p>
+<div class="row"><button class="btn" id="exBtn">Backup download</button><button class="btn" id="imBtn">Backup se wapas laao</button><input type="file" id="imFile" accept="application/json" hidden></div></div>
+<details class="panel"><summary class="strong">❓ Kaise use karein</summary>
+<p>1. Feed mein upar swipe karo (laptop par ⬇️ arrow). Har concept ek episode hai.</p>
+<p>2. Coding card: editor mein likho → ▶️ Run & Test. Hare ✅ = pass. Atak jao toh 💡 Hint, phir 🤖 AI hint.</p>
+<p>3. Solution dekha toh 2 din baad wahi task "bina dekhe" wapas aayega — yahi asli seekhna hai.</p>
+<p>4. Test mein 2/4 = agla episode, 3/4 = 🔐 Secret, 4/4 = ⭐⭐⭐. Galat sawaal baad mein "🧠 Yaad hai?" ban ke aate hain.</p>
+<p>5. 🧪 Lab mein kuch bhi likh ke chalao. Concept cards ke code ko "✏️ Lab mein badlo" se chhed ke dekho.</p>
+<p>6. Phone par: Chrome menu ⋮ → "Add to Home screen". Instagram ke paas rakho 😉</p></details>`;
+    renderConns();
+  const prov = $("#cProv"), sync = () => { const o = prov.value === "ollama"; $("#cUrlBox").hidden = !o; $("#cKeyBox").hidden = o;
+    $("#cKey").placeholder = PROVIDERS[prov.value].keyHint; $("#cModel").placeholder = PROVIDERS[prov.value].def || "Models dikhao dabao"; $("#cModels").innerHTML = ""; };
+  prov.value = AIS.list.length ? "groq" : "gemini"; sync(); prov.onchange = sync;
+  $("#aiRemember").onchange = e => { AIS.remember = e.target.checked; persistAI(); };
+  $("#cList").onclick = fillModels;
+  $("#cAdd").onclick = addConn;
+  $("#cTestAll").onclick = testAll;
+
+  $("#exBtn").onclick = exportData; $("#imBtn").onclick = () => $("#imFile").click(); $("#imFile").onchange = importData;
+}
+const aiNote = t => { const n = $("#aiNote"); if (n) n.textContent = t; };
+function draftConn() {
+  const provider = $("#cProv").value;
+  return {id:"c" + Date.now(), provider, key:$("#cKey").value.trim().replace(/^["']|["']$/g, ""),
+    model:$("#cModel").value.trim().replace(/^models\//, ""), url:$("#cUrl").value.trim() || "http://localhost:11434"};
+}
+function renderConns() {
+  const ul = $("#connList"); if (!ul) return;
+  ul.innerHTML = AIS.list.length ? AIS.list.map((c, i) => `<li>
+<p class="strong">${i + 1}. ${esc(connLabel(c))}</p>
+<p class="muted small">${c.provider === "ollama" ? esc(c.url) : "Key …" + esc(c.key.slice(-4))}${(cool[c.id] || 0) > Date.now() ? " · abhi busy, baad mein try hoga" : ""}</p>
+<div class="row"><button class="btn tiny" data-a="up" data-i="${i}" ${i ? "" : "disabled"}>▲</button><button class="btn tiny" data-a="down" data-i="${i}" ${i < AIS.list.length - 1 ? "" : "disabled"}>▼</button>
+<button class="btn tiny" data-a="test" data-i="${i}">Test</button><button class="btn tiny" data-a="del" data-i="${i}">Hatao</button></div></li>`).join("")
+    : `<li><p class="muted">Abhi koi AI nahi juda — offline check chal raha hai. Neeche se jodo.</p></li>`;
+  ul.querySelectorAll("button[data-a]").forEach(b => b.onclick = async () => {
+    const i = +b.dataset.i, L = AIS.list;
+    if (b.dataset.a === "up") [L[i - 1], L[i]] = [L[i], L[i - 1]];
+    if (b.dataset.a === "down") [L[i + 1], L[i]] = [L[i], L[i + 1]];
+    if (b.dataset.a === "del") L.splice(i, 1);
+    if (b.dataset.a === "test") { b.disabled = true; aiNote("Test ho raha hai: " + connLabel(L[i]) + "…");
+      try { await askAI(TEST_PROMPT, {test:"connection"}, ["status"], L[i]); delete cool[L[i].id]; aiNote("✅ " + connLabel(L[i]) + " chal raha hai."); }
+      catch (e) { aiNote("❌ " + connLabel(L[i]) + ": " + errMsg(e)); } b.disabled = false; return; }
+    persistAI(); renderConns();
+  });
+}
+const TEST_PROMPT = 'Return a JSON object with one string field named "status" set to "ok".';
+async function fillModels() {
+  const c = draftConn();
+  if (c.provider !== "ollama" && !c.key) { aiNote("Pehle key paste karo, phir Models dikhao."); return; }
+  aiNote("Models la raha hoon…");
+  try {
+    const ms = await listModels(c);
+    $("#cModels").innerHTML = ms.map(m => `<option value="${esc(m)}">`).join("");
+    aiNote(ms.length ? `${ms.length} models mile. Model box mein click karke chuno.` : "Koi model nahi mila.");
+    if (!$("#cModel").value && ms.length && !PROVIDERS[c.provider].def) $("#cModel").value = ms[0];
+  } catch (e) { aiNote("❌ Models nahi aaye: " + errMsg(e)); }
+}
+async function addConn() {
+  const c = draftConn(), P = PROVIDERS[c.provider];
+  if (P.keyRe && !P.keyRe.test(c.key)) { aiNote(`${P.label} ki poori key paste karo (${P.keyHint}).`); return; }
+  if (AIS.list.some(x => x.provider === c.provider && x.key === c.key && modelOf(x) === modelOf(c) && x.url === c.url)) { aiNote("Yeh connection pehle se juda hai."); return; }
+  const btn = $("#cAdd"); btn.disabled = true; aiNote("Test ho raha hai…");
+  try {
+    if (!modelOf(c)) { const ms = await listModels(c); if (!ms.length) throw new Error("Koi model nahi mila."); c.model = ms[0]; }
+    await askAI(TEST_PROMPT, {test:"connection"}, ["status"], c);
+    AIS.list.push(c); AIS.remember = $("#aiRemember").checked; persistAI();
+    $("#cKey").value = ""; $("#cModel").value = "";
+    aiNote(`✅ Jud gaya: ${connLabel(c)} (number ${AIS.list.length} par).`); renderConns();
+  } catch (e) { aiNote("❌ " + errMsg(e)); }
+  finally { btn.disabled = false; }
+}
+async function testAll() {
+  if (!AIS.list.length) { aiNote("Pehle koi connection jodo."); return; }
+  aiNote("Sab test ho rahe hain…"); const out = [];
+  for (const c of AIS.list) {
+    try { await askAI(TEST_PROMPT, {test:"connection"}, ["status"], c); delete cool[c.id]; out.push("✅ " + connLabel(c)); }
+    catch (e) { out.push("❌ " + connLabel(c) + " — " + errMsg(e)); }
+  }
+  aiNote(out.join("  |  ")); renderConns();
+}
+
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(S, null, 1)], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `jugaad-python-backup-${today()}.json`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function importData(e) {
+  const f = e.target.files?.[0]; if (!f) return;
+  f.text().then(t => { const o = JSON.parse(t);
+    if (!o || typeof o.xp !== "number" || typeof o.stars !== "object") throw new Error("bad");
+    if (!confirm("Is backup se abhi ka progress replace ho jaayega. Theek hai?")) return;
+    S = Object.assign(JSON.parse(JSON.stringify(DEFAULT)), o); save(); location.reload();
+  }).catch(() => toast("Yeh file sahi backup nahi lag rahi."));
+}
+
+/* ================= START ================= */
+dayRoll(); hud(); startWorker();
+startFeed(S.cur, false);
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
