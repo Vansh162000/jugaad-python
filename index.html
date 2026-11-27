@@ -40,7 +40,7 @@ code{font-family:var(--mono);font-size:.88em;background:color-mix(in srgb,curren
 .t-learn1{--c-bg:var(--paper)} .t-learn2{--c-bg:var(--yellow)} .t-predict{--c-bg:var(--sky)}
 .t-fill{--c-bg:var(--mint)} .t-bug{--c-bg:var(--coral)} .t-write{--c-bg:var(--ink);--c-fg:var(--paper)}
 .t-redo{--c-bg:var(--ink);--c-fg:var(--paper)} .t-test{--c-bg:var(--violet);--c-fg:#FFFFFF}
-.t-review{--c-bg:var(--pink)} .t-next{--c-bg:var(--blue);--c-fg:#FFFFFF} .t-note{--c-bg:var(--paper)}
+.t-review{--c-bg:var(--pink)} .t-deep{--c-bg:var(--yellow)} .t-mcq{--c-bg:var(--pink)} .t-iv{--c-bg:var(--blue);--c-fg:#FFFFFF} .t-next{--c-bg:var(--blue);--c-fg:#FFFFFF} .t-note{--c-bg:var(--paper)}
 .t-write .inner,.t-redo .inner{border-inline:3px solid var(--yellow)}
 
 .chip{align-self:flex-start;border:2px solid currentColor;border-radius:999px;padding:1px 12px;font-weight:700;font-size:.95rem}
@@ -93,6 +93,8 @@ ul.res li{font-family:var(--mono);font-size:.85rem;overflow-wrap:anywhere}
 .dots span.on{background:var(--c-fg)}
 .stamp{align-self:flex-start;border:2px dashed currentColor;border-radius:14px;padding:6px 14px;font-weight:800;transform:rotate(-2deg);animation:stamp .35s ease-out}
 @keyframes stamp{from{transform:rotate(-8deg) scale(1.4);opacity:0}}
+.field{width:100%;font:inherit;font-size:1rem;padding:10px 12px;border-radius:14px;border:2px solid var(--c-fg);background:transparent;color:var(--c-fg);resize:vertical}
+.field::placeholder{color:currentColor;opacity:.6}
 .secret{border:2px dashed currentColor;border-radius:18px;padding:12px 14px;display:grid;gap:8px}
 
 .hud{position:fixed;inset:0 0 auto;z-index:20;display:flex;justify-content:center;gap:6px;padding:calc(env(safe-area-inset-top,0px) + 10px) 8px 8px;pointer-events:none}
@@ -194,9 +196,10 @@ const LEVELS = ["Print wala","Variable veer","Loop master","Function fighter","D
 const STORE = "jp_v1";
 const DEFAULT = {v:1,xp:0,streak:0,lastGoalDay:"",freezes:2,freezeDay:"",day:"",cardsToday:0,mysteryDay:"",total:0,
   lines:0,linesDay:"",linesToday:0,clean:0,badges:{},done:{},stars:{},secrets:{},unlocked:0,cur:CONCEPTS[0]?.id,
-  review:{},redo:{},drafts:{},typeCount:{},lab:"# Yahan kuch bhi try karo\nprint('Hello, Jugaad!')\n",seenIntro:false};
+  review:{},redo:{},drafts:{},typeCount:{},gen:{},topics:{},lab:"# Yahan kuch bhi try karo\nprint('Hello, Jugaad!')\n",seenIntro:false};
 function load() { let s = null; try { s = JSON.parse(localStorage.getItem(STORE)); } catch {} return Object.assign(JSON.parse(JSON.stringify(DEFAULT)), s || {}); }
 let S = load();
+const titleOf = cid => CBY[cid]?.title || S.topics?.[cid]?.title || "AI topic";
 if (!CBY[S.cur]) S.cur = CONCEPTS[0].id;
 let saveTimer = null;
 function save() { clearTimeout(saveTimer); try { localStorage.setItem(STORE, JSON.stringify(S)); } catch { toast("Progress save nahi hua — browser storage full ya block hai."); } hud(); }
@@ -225,22 +228,24 @@ function startWorker() {
     const m = e.data;
     if (m.type === "ready") { setPy("ready"); waiters.splice(0).forEach(w => w.ok()); }
     else if (m.type === "fatal") { setPy("fail"); waiters.splice(0).forEach(w => w.no(new Error(m.error))); }
+    else if (m.type === "started") { const p = pending.get(m.id); if (p) { clearTimeout(p.t); p.t = setTimeout(() => killRun(m.id), 5000); } }
     else if (m.type === "result") { const p = pending.get(m.id); if (p) { clearTimeout(p.t); pending.delete(m.id); p.resolve(m.res); } }
   };
   worker.onerror = () => { setPy("fail"); waiters.splice(0).forEach(w => w.no(new Error("worker"))); };
 }
 $("#hPy").onclick = () => { if (pyState === "fail") { worker?.terminate(); startWorker(); } else toast(pyState === "ready" ? "🐍 Python ready hai" : "🐍 Python load ho raha hai (pehli baar ~10 MB)…"); };
+function killRun(id) {
+  if (!pending.has(id)) return;
+  worker.terminate(); worker = null;
+  for (const [, p] of pending) { clearTimeout(p.t); p.resolve({timeout:true}); } pending.clear();
+  startWorker();
+}
 async function runPy(code, tests = [], setup = "") {
   if (!worker) startWorker();
   if (pyState !== "ready") await new Promise((ok, no) => waiters.push({ok, no}));
   return new Promise(resolve => {
     const id = ++seq;
-    const t = setTimeout(() => {
-      if (!pending.has(id)) return;
-      pending.delete(id); worker.terminate(); worker = null;
-      for (const [, p] of pending) { clearTimeout(p.t); p.resolve({timeout:true}); } pending.clear();
-      startWorker(); resolve({timeout:true});
-    }, 5000);
+    const t = setTimeout(() => killRun(id), 120000); // packages (numpy etc.) load hone ka time; code ka 5 sec timer "started" ke baad
     pending.set(id, {resolve, t});
     worker.postMessage({id, code, tests, setup});
   });
@@ -422,7 +427,7 @@ function parseJSON(raw) {
   if (a >= 0 && b > a) return JSON.parse(t.slice(a, b + 1));
   throw new SyntaxError("not json");
 }
-async function callOne(c, instruction, payload, fields) {
+async function callOne(c, instruction, payload, fields, tmo) {
   const message = JSON.stringify(payload), model = modelOf(c);
   let url, headers = {"Content-Type":"application/json"}, body;
   const chat = [{role:"system", content:instruction + " Reply with JSON only."}, {role:"user", content:message}];
@@ -442,7 +447,7 @@ async function callOne(c, instruction, payload, fields) {
     url = (c.url || "http://localhost:11434").replace(/\/+$/, "") + "/api/chat";
     body = {model, stream:false, format:"json", messages:chat};
   }
-  const res = await fetch(url, {method:"POST", headers, body:JSON.stringify(body), signal:AbortSignal.timeout(c.provider === "ollama" ? 90000 : 15000)});
+  const res = await fetch(url, {method:"POST", headers, body:JSON.stringify(body), signal:AbortSignal.timeout(tmo || (c.provider === "ollama" ? 90000 : 15000))});
   if (!res.ok) throw httpError(res.status, await res.json().catch(() => null));
   const data = await res.json();
   const raw = c.provider === "gemini" ? (data.candidates?.[0]?.content?.parts || []).filter(x => x.text && !x.thought).map(x => x.text).join("")
@@ -453,7 +458,7 @@ async function callOne(c, instruction, payload, fields) {
   return Object.fromEntries(fields.map(f => [f, result[f].trim().slice(0, 900)]));
 }
 // Tries each connection in order; skips busy ones to the end; one quick retry on 5xx.
-async function askAIMeta(instruction, payload, fields, only) {
+async function askAIMeta(instruction, payload, fields, only, long) {
   const now = Date.now();
   const list = only ? [only] : [...AIS.list].sort((a, b) => ((cool[a.id] || 0) > now) - ((cool[b.id] || 0) > now));
   if (!list.length) throw new Error("AI connected nahi hai.");
@@ -461,7 +466,7 @@ async function askAIMeta(instruction, payload, fields, only) {
   for (const c of list) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const result = await callOne(c, instruction, payload, fields);
+        const result = await callOne(c, instruction, payload, fields, long ? (c.provider === "ollama" ? 240000 : 60000) : 0);
         delete cool[c.id];
         if (failed.length && !only) toast(`⚠️ ${failed.map(f => f.who).join(", ")} busy — ${connLabel(c)} se jawab liya`);
         return {result, via:c, failed};
@@ -475,7 +480,7 @@ async function askAIMeta(instruction, payload, fields, only) {
   }
   const err = new Error(failed.map(f => f.who + ": " + f.msg).join(" · ")); err.all = failed; throw err;
 }
-const askAI = async (instruction, payload, fields, only) => (await askAIMeta(instruction, payload, fields, only)).result;
+const askAI = async (instruction, payload, fields, only, long) => (await askAIMeta(instruction, payload, fields, only, long)).result;
 
 async function listModels(c) {
   let url, headers = {};
@@ -553,9 +558,13 @@ function renderLearn2(c) {
 function optButtons(options) { return `<div class="opts">${options.map((o, i) => `<button class="opt" data-i="${i}"><pre>${esc(o)}</pre></button>`).join("")}</div>`; }
 function shuffledQ(q) { const order = shuffle(q.options.map((_, i) => i)); return {...q, options:order.map(i => q.options[i]), answer:order.indexOf(q.answer)}; }
 
+function reportBtn(el, kind, id) {
+  el.querySelector(".inner").insertAdjacentHTML("beforeend", `<div class="row"><button class="btn tiny report">🚩 Galat lag raha hai? Hatao</button></div>`);
+  el.querySelector(".report").onclick = () => { if (!confirm("Yeh AI card hamesha ke liye hata dein?")) return; removeGen(kind, id); el.style.opacity = ".35"; el.querySelector(".report").disabled = true; toast("🚩 Hata diya — feedback ke liye shukriya"); };
+}
 function renderPredict(c) {
-  const t = TASK[c.tid], q = shuffledQ(t);
-  const el = shell(c, "🔮 Output batao · " + esc(CBY[t.cid].title), `<p class="task">${md(t.prompt)} Pehle dimaag mein chalao, phir chuno.</p>${codeBlock(t.code, true)}${optButtons(q.options)}`);
+  const t = TASK[c.tid]; if (!t) return null; const q = shuffledQ(t);
+  const el = shell(c, "🔮 Output batao · " + esc(titleOf(t.cid)) + (t.ai ? " · 🤖 AI" : ""), `<p class="task">${md(t.prompt)} Pehle dimaag mein chalao, phir chuno.</p>${codeBlock(t.code, true)}${optButtons(q.options)}`);
   el.querySelectorAll(".opt").forEach(b => b.onclick = () => {
     const ok = +b.dataset.i === q.answer;
     el.querySelectorAll(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === q.answer) x.classList.add("right"); });
@@ -564,6 +573,7 @@ function renderPredict(c) {
     outOf(el).innerHTML = `<p class="${ok ? "hit" : "miss"}">${ok ? "✅ Sahi pakda!" : "❌ Oops! Ab Run karke khud dekho."}</p><div class="fb"><p>💡 ${md(t.why)}</p></div>`;
     done(el, ok ? 6 : 2);
   });
+  if (t.ai) reportBtn(el, "preds", t.id);
   return el;
 }
 
@@ -573,9 +583,9 @@ function newLines(code, starter) {
   return n;
 }
 function renderCode(c) {
-  const t = TASK[c.tid], redo = c.type === "redo";
+  const t = TASK[c.tid]; if (!t) return null; const redo = c.type === "redo";
   const chip = redo ? "🔁 Bina dekhe dobara likho" : ({fill:"✍️ Khaali jagah bharo", bug:"🐞 Bug pakdo", write:"🛠️ Khud likho"})[t.type];
-  const el = shell(c, chip + " · " + esc(CBY[t.cid].title), `
+  const el = shell(c, chip + " · " + esc(titleOf(t.cid)) + (t.ai ? " · 🤖 AI" : ""), `
 <p class="task">${md(t.prompt)}</p>${redo ? `<p class="hint">Pichhli baar solution dekha tha. Ab khud likh ke dikhao — yahi asli seekhna hai.</p>` : ""}
 ${editorHTML()}
 <div class="row"><button class="btn main run">▶️ Run & Test</button><button class="btn hintb">💡 Hint</button><button class="btn aihint">🤖 AI hint</button><button class="btn sol">👀 Solution</button><button class="btn tiny reset">↺ Reset</button></div>
@@ -638,6 +648,7 @@ ${editorHTML()}
       };
     }
   };
+  if (t.ai && !redo) reportBtn(el, "tasks", t.id);
   return el;
 }
 
@@ -691,7 +702,7 @@ ${S.secrets[C.id] ? `<div class="secret"><p class="lbl">🔐 Python Secret${newS
 function renderReview(c) {
   const q0 = QB[c.qid]; if (!q0) return null;
   const q = {...shuffledQ(q0), qid:c.qid};
-  const el = shell(c, "🧠 Yaad hai? · " + esc(CBY[q0.cid].title), `<p class="hint">Pichhle episode ka ek sawaal — dimaag ka gym 💪</p><div class="quiz sec"></div>`);
+  const el = shell(c, "🧠 Yaad hai? · " + esc(titleOf(q0.cid)), `<p class="hint">Pichhle episode ka ek sawaal — dimaag ka gym 💪</p><div class="quiz sec"></div>`);
   quizInto(el.querySelector(".quiz"), [q], (right) => {
     gradeReview(c.qid, right === 1); save();
     el.querySelector(".quiz").insertAdjacentHTML("beforeend", `<p class="small">Agla review: ${daysBetween(today(), S.review[c.qid].due)} din baad</p>`);
@@ -719,11 +730,14 @@ function renderNext(c) {
       body.querySelector(".gotest").onclick = () => appendCards([{type:"test", cid:C.id, key:C.id + ":test"}], el);
       return false;
     }
-    if (!nxt) { body.innerHTML = `<p class="stars">🏆</p><h2 class="say">Stage 1 complete!</h2><p>Python core ke saare 10 episodes khatam. Map mein jaake ⭐ badhao, saare 🔐 Secrets kholo, aur Lab mein khud cheezein banao. Agla stage (Pythonic Python) jald aa raha hai!</p>`; return false; }
+    const more = `<div class="row"><button class="btn genmore">✨ ${esc(C.title)} par aur practice (AI)</button></div><div class="genlog small"></div>`;
+    const wire = () => body.querySelector(".genmore").onclick = e => quickGen(C.id, el, e.currentTarget, body.querySelector(".genlog"));
+    if (!nxt) { body.innerHTML = `<p class="stars">🏆</p><h2 class="say">Stage 1 complete!</h2><p>Python core ke saare 10 episodes khatam. Ab 🗺️ Map → ✨ AI Practice Studio mein koi bhi topic likho (decorators, generators, numpy…) aur AI naye cards banayega. ⭐ badhao, 🔐 Secrets kholo.</p>${more}`; wire(); return false; }
     const N = CBY[nxt.id];
     body.innerHTML = `<p class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</p><p>${C.emoji} ${esc(C.title)} done!</p>
 <p class="lbl">Agla episode</p><h2 class="big">${N.emoji} ${esc(N.title)}</h2><p class="mean">${esc(N.tagline)}</p>
-<p>🎣 ${md(N.hook.q)}</p><p class="strong">⬆️ Swipe karo — shuru!</p>`;
+<p>🎣 ${md(N.hook.q)}</p><p class="strong">⬆️ Swipe karo — shuru!</p>${more}`;
+    wire();
     return true;
   };
   el._refresh();
@@ -743,7 +757,191 @@ function renderNote(c) {
   el.querySelector(".go").onclick = () => feed.scrollBy({top:feed.clientHeight, behavior:"smooth"});
   return el;
 }
-const RENDER = {learn1:renderLearn1, learn2:renderLearn2, predict:renderPredict, fill:renderCode, bug:renderCode, write:renderCode, redo:renderCode,
+/* ================= AI GENERATOR ================= */
+const GEN_KINDS = [
+  {id:"deeps", n:1, def:true, label:"📖 Aur theory (andar ki baat)"},
+  {id:"preds", n:2, def:true, label:"🔮 Tricky output sawaal"},
+  {id:"tasks", n:2, def:true, label:"🛠️ Coding tasks (tests ke saath)"},
+  {id:"mcqs", n:2, def:true, label:"🧩 Concept sawaal"},
+  {id:"ivs", n:1, def:true, label:"🎤 Interview sawaal"}
+];
+const LEVEL_TXT = {easy:"easy, for a beginner", medium:"medium", tricky:"tricky: edge cases, surprising behaviour, common misconceptions", interview:"interview level for a fresher / junior AI-ML or data role"};
+const GEN_BASE = "You create practice material for a Hindi-speaking Indian learner of Python whose goal is to become an AI/ML engineer. Every prompt, hint, explanation and 'why' must be in simple Hinglish using Roman letters (never Devanagari); code, identifiers and outputs stay in English. All code must be valid Python 3.12 using only the standard library (numpy/pandas only if the topic is about them), with no input(), no files, no network, no randomness or time, and deterministic output (never print sets of strings or rely on hash order). Return only a JSON object.";
+const GP = {
+  tasks: GEN_BASE + ' Create COUNT NEW coding exercises on TOPIC at level LEVEL. Return {"items":[{"type":"write" or "bug" or "fill","prompt":"Hinglish task that names the function","starter":"code the learner starts with","solution":"complete correct code","tests":[["python call expression","expected value as a python literal"]],"hint":"Hinglish hint that is not the solution"}]}. Rules: each exercise defines exactly one function that the tests call; 3 or 4 tests including an edge case; expected values are plain literals (numbers, strings, lists, dicts, tuples, True/False/None); for "write" the starter is only the def line, then "    # yahan likho" and "    pass"; for "bug" the starter is the solution with exactly one realistic beginner bug; for "fill" the starter is the solution with one key part replaced by ___ . Mix the types. Do not repeat anything listed in avoid.',
+  preds: GEN_BASE + ' Create COUNT TRICKY "predict the output" questions on TOPIC at level LEVEL that test real understanding (surprising behaviour, common misconceptions). Return {"items":[{"code":"short program, max 8 lines, that prints something","options":["4 distinct candidate outputs, exactly as printed; multiple lines joined with \\n"],"answer":0,"why":"Hinglish explanation"}]}. answer is the 0-based index of the option that is EXACTLY what the program prints. Do not repeat anything listed in avoid.',
+  mcqs: GEN_BASE + ' Create COUNT conceptual multiple-choice questions on TOPIC at level LEVEL — the kind asked in interviews and exams to check understanding, not memorisation. Return {"items":[{"q":"question in Hinglish (code words in English)","options":["4 distinct short options"],"answer":0,"why":"Hinglish explanation"}]}. Exactly one option is correct; answer is its 0-based index. No "what is the output" questions here. Do not repeat anything listed in avoid.',
+  ivs: GEN_BASE + ' Create COUNT Python interview questions on TOPIC for a fresher / junior AI-ML or data role (level LEVEL). Return {"items":[{"q":"the question in English, as an interviewer would ask it","answer":"a strong spoken-style model answer in simple English, 3-5 sentences","points":["3-4 key points the answer must cover, in Hinglish"],"follow_up":"one likely follow-up question in English"}]}. Do not repeat anything listed in avoid.',
+  deeps: GEN_BASE + ' Write COUNT short "deep dive" theory card(s) on TOPIC (level LEVEL) that go beyond the basics. Return {"items":[{"title":"short catchy title in Hinglish","text":"4-6 simple Hinglish sentences: the idea and why it matters in real projects","hidden":"one thing most beginners do not know about this, in Hinglish","code":"short runnable example that prints something"}]}. Do not repeat anything listed in avoid.'
+};
+const VERIFY = 'You are a strict Python expert. Solve this multiple-choice question independently. Return only JSON: {"answer": "<0-based index of the correct option>", "sure": "yes" or "no"}.';
+const IVGRADE = TUTOR + " Grade the learner's answer to a Python interview question against the model answer and key points. Be encouraging but honest. Fields: score (like '6/10'), good (what they got right, Hinglish), missing (important points missing or wrong, Hinglish), better (how to say it better, in simple English, 2-4 sentences).";
+const IV = {}, DEEP = {};
+const isStr = x => typeof x === "string" && x.trim().length > 0;
+const libOf = cid => (S.gen[cid] ||= {tasks:[], preds:[], mcqs:[], ivs:[], deeps:[]});
+function registerGen() {
+  for (const [cid, L] of Object.entries(S.gen)) {
+    (L.tasks || []).forEach(t => { TASK[t.id] = {...t, cid, ai:true}; });
+    (L.preds || []).forEach(t => { TASK[t.id] = {...t, type:"predict", prompt:"Output kya hoga?", cid, ai:true}; });
+    (L.mcqs || []).forEach(q => { QB[q.id] = {...q, cid, ai:true}; });
+    (L.ivs || []).forEach(q => { IV[q.id] = {...q, cid}; });
+    (L.deeps || []).forEach(d => { DEEP[d.id] = {...d, cid}; });
+  }
+}
+function removeGen(kind, id) {
+  for (const L of Object.values(S.gen)) if (L[kind]) L[kind] = L[kind].filter(x => x.id !== id);
+  delete TASK[id]; delete QB[id]; delete IV[id]; delete DEEP[id]; delete S.review[id]; delete S.redo[id]; save();
+}
+function cardFor(kind, item, cid) {
+  if (kind === "tasks") return {type:item.type, cid, tid:item.id, key:item.id};
+  if (kind === "preds") return {type:"predict", cid, tid:item.id, key:item.id};
+  if (kind === "mcqs") return {type:"mcq", cid, qid:item.id, key:item.id};
+  if (kind === "ivs") return {type:"iv", cid, iid:item.id, key:item.id};
+  return {type:"deep", cid, did:item.id, key:item.id};
+}
+function genCards(cid) {
+  const L = S.gen[cid]; if (!L) return [];
+  return ["deeps","preds","tasks","mcqs","ivs"].flatMap(k => (L[k] || []).map(x => cardFor(k, x, cid)));
+}
+function openCards(cards) {
+  if (!cards.length) return;
+  const at = current || feed.lastElementChild;
+  appendCards(cards, at);
+  setTimeout(() => at?.nextElementSibling?.scrollIntoView({behavior:"smooth"}), 150);
+}
+async function checkTask(t) {
+  if (!t || !["write","bug","fill"].includes(t.type) || ![t.prompt, t.starter, t.solution, t.hint].every(isStr)) return false;
+  if (!Array.isArray(t.tests) || t.tests.length < 2 || t.tests.length > 6 || !t.tests.every(x => Array.isArray(x) && isStr(x[0]) && isStr(x[1]))) return false;
+  const a = await runPy(t.solution, t.tests);
+  if (a.timeout || a.err || !a.results?.length || !a.results.every(r => r.ok)) return false;
+  const b = await runPy(t.starter, t.tests);
+  return !(!b.timeout && !b.err && b.results?.length && b.results.every(r => r.ok));
+}
+const normOut = s => String(s).split("\n").map(l => l.trimEnd()).join("\n").replace(/\n+$/, "");
+async function checkPred(q) {
+  if (!q || !isStr(q.code) || !isStr(q.why) || !Array.isArray(q.options) || q.options.length < 3 || q.options.length > 4 || !q.options.every(isStr)) return false;
+  q.options = q.options.map(normOut); q.answer = Number(q.answer);
+  if (new Set(q.options).size !== q.options.length || !(q.answer >= 0 && q.answer < q.options.length)) return false;
+  const r = await runPy(q.code);
+  if (r.timeout) return false;
+  if (r.err) return /error/i.test(q.options[q.answer]) && q.options[q.answer].toLowerCase().includes(r.err.type.toLowerCase().replace("error", ""));
+  return normOut(r.out || "") !== "" && q.options[q.answer] === normOut(r.out);
+}
+async function checkMcq(q) {
+  if (!q || !isStr(q.q) || !isStr(q.why) || !Array.isArray(q.options) || q.options.length < 3 || q.options.length > 4 || !q.options.every(isStr)) return false;
+  q.answer = Number(q.answer);
+  if (new Set(q.options).size !== q.options.length || !(q.answer >= 0 && q.answer < q.options.length)) return false;
+  try { const v = await askAI(VERIFY, {question:q.q, options:q.options}, ["answer","sure"]);
+    return parseInt(v.answer, 10) === q.answer && /^y/i.test(v.sure); }
+  catch { return false; }
+}
+async function checkDeep(d) {
+  if (!d || ![d.title, d.text, d.hidden].every(isStr)) return false;
+  if (isStr(d.code)) { const r = await runPy(d.code); if (r.timeout || r.err) d.code = ""; }
+  return true;
+}
+const checkIv = q => !!(q && isStr(q.q) && isStr(q.answer) && Array.isArray(q.points) && q.points.length && q.points.every(isStr));
+async function generate(cid, kinds, level, log) {
+  const L = libOf(cid), title = titleOf(cid), made = {}, names = Object.fromEntries(GEN_KINDS.map(k => [k.id, k.label]));
+  const C = CBY[cid];
+  const topic = C ? `${C.title} (Python basics: ${C.tagline}; already taught: ${C.idea})` : title;
+  if (pyState !== "ready") log("🐍 Python engine taiyaar ho raha hai (check karne ke liye)…");
+  for (const [kind, n] of kinds) {
+    log(`⏳ ${names[kind]} ban rahe hain…`);
+    const avoid = (L[kind] || []).slice(-20).map(x => x.prompt || x.q || x.code || x.title);
+    let items = [];
+    try {
+      const prompt = GP[kind].replace("COUNT", n).replace("TOPIC", "the given topic").replace("LEVEL", LEVEL_TXT[level] || level);
+      const r = await askAI(prompt, {topic, level:LEVEL_TXT[level] || level, count:n, avoid}, null, null, true);
+      items = Array.isArray(r?.items) ? r.items.slice(0, n + 1) : [];
+    } catch (e) { log(`❌ ${names[kind]}: ${e.all ? "saare AI fail" : errMsg(e)}`); continue; }
+    let ok = 0;
+    for (const it of items) {
+      let good = false;
+      try {
+        good = kind === "tasks" ? await checkTask(it) : kind === "preds" ? await checkPred(it) : kind === "mcqs" ? await checkMcq(it) : kind === "deeps" ? await checkDeep(it) : checkIv(it);
+      } catch { good = false; }
+      if (!good) continue;
+      it.id = `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+      L[kind].push(it); L[kind] = L[kind].slice(-200); ok++;
+      (made[kind] ||= []).push(it);
+    }
+    log(`${ok ? "✅" : "⚠️"} ${names[kind]}: ${ok} pass${items.length > ok ? ` · ${items.length - ok} check mein fail, hata diye` : ""}`);
+  }
+  save(); registerGen();
+  const order = ["deeps","preds","mcqs","tasks","ivs"], cards = [];
+  for (const k of order) for (const it of (made[k] || [])) cards.push(cardFor(k, it, cid));
+  if (!cards.length) log("Is baar koi card check pass nahi kar paaya. Dobara try karo ya level badlo.");
+  return cards;
+}
+async function quickGen(cid, el, btn, logBox) {
+  if (!needAI()) return;
+  btn.disabled = true; logBox.innerHTML = "";
+  const cards = await generate(cid, GEN_KINDS.map(k => [k.id, k.n]), "medium", t => logBox.insertAdjacentHTML("beforeend", `<p>${esc(t)}</p>`));
+  btn.disabled = false;
+  if (cards.length) { appendCards(cards, el); setTimeout(() => el.nextElementSibling?.scrollIntoView({behavior:"smooth"}), 200); }
+}
+
+function renderDeep(c) {
+  const d = DEEP[c.did]; if (!d) return null;
+  const el = shell(c, "📖 Aur gehraai · " + esc(titleOf(d.cid)) + " · 🤖 AI", `<h2 class="say">${esc(d.title)}</h2><p>${md(d.text)}</p>
+<div class="secret"><p class="lbl">🔍 Kam log jaante hain</p><p>${md(d.hidden)}</p></div>${isStr(d.code) ? codeBlock(d.code.endsWith("\n") ? d.code : d.code + "\n") : ""}
+<div class="row"><button class="btn main got">Samajh gaya ✓</button></div>`);
+  el.querySelector(".got").onclick = () => done(el, 4);
+  reportBtn(el, "deeps", d.id);
+  return el;
+}
+function renderMcq(c) {
+  const q0 = QB[c.qid]; if (!q0) return null;
+  const q = {...shuffledQ(q0), qid:c.qid};
+  const el = shell(c, "🧩 Concept sawaal · " + esc(titleOf(q0.cid)) + " · 🤖 AI", `<div class="quiz sec"></div>`);
+  quizInto(el.querySelector(".quiz"), [q], right => {
+    if (!right) gradeReview(c.qid, false); else if (!S.review[c.qid]) S.review[c.qid] = {step:1, due:today(2)};
+    save(); el.querySelector(".nxt")?.remove(); done(el, right ? 6 : 2);
+  });
+  el.querySelector(".quiz").addEventListener("click", e => { if (e.target.closest(".opt")) setTimeout(() => el.querySelector(".nxt")?.click(), 0); });
+  reportBtn(el, "mcqs", q0.id);
+  return el;
+}
+function renderIv(c) {
+  const q = IV[c.iid]; if (!q) return null;
+  const el = shell(c, "🎤 Interview sawaal · " + esc(titleOf(q.cid)) + " · 🤖 AI", `<h2 class="say">${esc(q.q)}</h2>
+<p class="hint">Interview jaisa socho: pehle khud jawab do — likh ke ya 🎙️ bol ke (English practice bhi ho jaayegi 😉), phir check karo.</p>
+<textarea class="field ans" rows="5" placeholder="Apna jawab yahan… (Hinglish bhi chalega)"></textarea>
+<div class="row"><button class="btn mic">🎙️ Bol ke likho</button><button class="btn main chk">🤖 Mera jawab check karo</button><button class="btn show">👀 Model answer</button></div>
+<div class="ivout sec"></div>`);
+  const ta = el.querySelector(".ans"), box = el.querySelector(".ivout");
+  const showModel = () => { if (el._shown) return; el._shown = true;
+    box.insertAdjacentHTML("beforeend", `<div class="fb"><p class="lbl">👀 Model answer</p><p>${esc(q.answer)}</p><p class="lbl">Zaroori points</p><ul class="pts">${q.points.map(p => `<li>${md(p)}</li>`).join("")}</ul>${isStr(q.follow_up) ? `<p class="lbl">Agla sawaal ho sakta hai</p><p>${esc(q.follow_up)}</p>` : ""}</div>`); };
+  el.querySelector(".show").onclick = () => { showModel(); done(el, 5); };
+  el.querySelector(".chk").onclick = async e => {
+    if (ta.value.trim().split(/\s+/).length < 5) { toast("Pehle kam se kam ek-do line ka jawab do"); return; }
+    if (!needAI()) return; const b = e.currentTarget; b.disabled = true;
+    box.insertAdjacentHTML("afterbegin", `<p class="wait">AI tumhara jawab padh raha hai…</p>`);
+    try { const r = await askAI(IVGRADE, {question:q.q, model_answer:q.answer, key_points:q.points, learner_answer:ta.value.slice(0, 3000)}, ["score","good","missing","better"]);
+      box.querySelector(".wait")?.remove();
+      box.insertAdjacentHTML("afterbegin", `<div class="fb"><p class="hit">🎯 ${esc(r.score)}</p><p>✅ ${md(r.good)}</p><p>📌 ${md(r.missing)}</p><p class="lbl">Aise bolo</p><p>${esc(r.better)}</p></div>`);
+      showModel(); done(el, 10); }
+    catch (err) { box.querySelector(".wait")?.remove(); box.insertAdjacentHTML("afterbegin", `<p class="small">AI nahi chala: ${esc(err.all ? "saare AI fail" : errMsg(err))}</p>`); }
+    b.disabled = false;
+  };
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition, mic = el.querySelector(".mic");
+  if (!Rec) mic.hidden = true;
+  let rec = null;
+  mic.onclick = () => {
+    if (rec) { rec.stop(); return; }
+    rec = new Rec(); rec.lang = "en-IN"; rec.continuous = true; rec.interimResults = true;
+    const base = ta.value ? ta.value.trimEnd() + " " : "";
+    rec.onresult = ev => { ta.value = base + Array.from(ev.results, r => r[0].transcript).join(" "); };
+    rec.onend = () => { rec = null; mic.textContent = "🎙️ Bol ke likho"; };
+    rec.onerror = () => toast("Mic nahi chala — permission check karo, ya type karo");
+    try { rec.start(); mic.textContent = "⏹️ Ruko"; } catch { rec = null; }
+  };
+  reportBtn(el, "ivs", q.id);
+  return el;
+}
+
+const RENDER = {deep:renderDeep, mcq:renderMcq, iv:renderIv, learn1:renderLearn1, learn2:renderLearn2, predict:renderPredict, fill:renderCode, bug:renderCode, write:renderCode, redo:renderCode,
   test:renderTest, review:renderReview, next:renderNext, note:renderNote};
 
 /* ================= FEED ================= */
@@ -815,9 +1013,22 @@ $("#tLab").onclick = () => openLab();
 $("#tMe").onclick = () => { renderMe(); openSheet($("#sheetMe")); };
 
 function renderMap() {
+  const libTopics = Object.keys(S.gen).filter(cid => genCards(cid).length);
   const passed = CONCEPTS.filter(c => (S.stars[c.id] || 0) >= 1).length, secN = Object.keys(S.secrets).length;
   $("#mapBody").innerHTML = closeBtn("sheetMap") + `<h2>🗺️ Stage 1: Python Core</h2><p class="muted">${passed}/${CONCEPTS.length} episodes pass · ${secN}/${CONCEPTS.length} secrets</p>
 <div class="bar"><span style="width:${(passed / CONCEPTS.length * 100).toFixed(0)}%"></span></div>
+<div class="panel"><h3>✨ AI Practice Studio</h3>
+<p class="muted small">AI naye questions banata hai. Coding aur output wale sawaal asli Python mein chala ke check hote hain; concept sawaal doosri baar AI se cross-check hote hain. Jo check fail ho, woh apne aap hat jaata hai.</p>
+<label for="gTopic">Topic</label>
+<select id="gTopic">${CONCEPTS.map(c => `<option value="${c.id}">${c.emoji} ${esc(c.title)}</option>`).join("")}${Object.entries(S.topics).map(([id, t]) => `<option value="${esc(id)}">✨ ${esc(t.title)}</option>`).join("")}<option value="__new">✍️ Naya topic likho…</option></select>
+<input id="gCustom" maxlength="80" placeholder="Jaise: generators, decorators, list slicing tricks, numpy arrays" hidden>
+<label for="gLevel">Level</label>
+<select id="gLevel"><option value="easy">Aasaan</option><option value="medium" selected>Medium</option><option value="tricky">Tricky / edge cases</option><option value="interview">Interview level</option></select>
+<label>Kya chahiye?</label>
+${GEN_KINDS.map(k => `<label class="check"><input type="checkbox" class="gk" value="${k.id}" ${k.def ? "checked" : ""}> ${k.label}</label>`).join("")}
+<div class="row"><button class="btn main" id="gGo">✨ Bana do</button><button class="btn" id="gIv">🎤 Sirf 5 interview sawaal</button></div>
+<div id="gLog" class="small" role="status"></div></div>
+${libTopics.length ? `<div class="panel"><h3>📚 Tumhare AI cards</h3><ul class="clean">${libTopics.map(cid => `<li><p class="strong">${esc(titleOf(cid))}</p><p class="muted small">${genCards(cid).length} cards</p><div class="row"><button class="btn tiny golib" data-id="${esc(cid)}">Feed mein kholo</button></div></li>`).join("")}</ul></div>` : ""}
 <div class="panel"><ul class="clean">${CONCEPTS.map((c, i) => { const st = S.stars[c.id] || 0, open = i <= S.unlocked;
   return `<li class="${open ? "" : "lock"}"><p class="strong">${open ? (st ? "✅" : "▶️") : "🔒"} Episode ${i + 1} · ${c.emoji} ${esc(c.title)}</p><p class="muted small">${esc(c.tagline)} · ${"★".repeat(st)}${"☆".repeat(3 - st)}</p>
 <div class="row"><button class="btn tiny goep" data-id="${c.id}" ${open ? "" : "disabled"}>${st ? "Dobara kholo" : open ? "Kholo" : "Locked"}</button></div></li>`; }).join("")}</ul></div>
@@ -826,6 +1037,23 @@ function renderMap() {
   ? `<li><p class="strong">🔓 ${esc(c.secret.title)}</p><p>${md(c.secret.text)}</p>${codeBlock(c.secret.code)}</li>`
   : `<li class="lock"><p class="strong">🔒 ${esc(c.secret.title)}</p><p class="small">Episode ${i + 1} (${esc(c.title)}) ke test mein 3/4 lao</p></li>`).join("")}</ul></div>`;
   $("#mapBody").querySelectorAll(".goep").forEach(b => b.onclick = () => { $("#sheetMap").close(); startFeed(b.dataset.id, true); });
+  $("#mapBody").querySelectorAll(".golib").forEach(b => b.onclick = () => { $("#sheetMap").close(); openCards(shuffle(genCards(b.dataset.id))); });
+  const sel = $("#gTopic"); sel.value = S.cur; sel.onchange = () => { $("#gCustom").hidden = sel.value !== "__new"; if (!$("#gCustom").hidden) $("#gCustom").focus(); };
+  const go = async (kinds, level) => {
+    if (!needAI()) return;
+    let cid = sel.value;
+    if (cid === "__new") { const title = $("#gCustom").value.trim(); if (!title) { $("#gLog").textContent = "Pehle topic likho."; return; }
+      cid = "c_" + title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40); S.topics[cid] = {title}; save(); }
+    if (!kinds.length) { $("#gLog").textContent = "Kam se kam ek cheez chuno."; return; }
+    $("#gGo").disabled = $("#gIv").disabled = true;
+    const log = t => $("#gLog").insertAdjacentHTML("beforeend", `<p>${esc(t)}</p>`); $("#gLog").innerHTML = "";
+    const cards = await generate(cid, kinds, level, log);
+    $("#gGo").disabled = $("#gIv").disabled = false;
+    if (cards.length) { $("#gLog").insertAdjacentHTML("beforeend", `<div class="row"><button class="btn main" id="gOpen">▶️ ${cards.length} naye cards kholo</button></div>`);
+      $("#gOpen").onclick = () => { $("#sheetMap").close(); openCards(cards); }; }
+  };
+  $("#gGo").onclick = () => go(GEN_KINDS.filter(k => $(`.gk[value="${k.id}"]`).checked).map(k => [k.id, k.n]), $("#gLevel").value);
+  $("#gIv").onclick = () => go([["ivs", 5]], "interview");
 }
 
 function openLab(code) {
@@ -971,6 +1199,7 @@ function importData(e) {
 }
 
 /* ================= START ================= */
+registerGen();
 dayRoll(); hud(); startWorker();
 startFeed(S.cur, false);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});

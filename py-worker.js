@@ -41,7 +41,11 @@ def __jp_run(code, setup, tests_json):
             if err is None:
                 for t in tests:
                     label = t[2] if len(t) > 2 else t[0]
-                    want = eval(t[1], {})
+                    try:
+                        want = eval(t[1], {})
+                    except BaseException as e:
+                        results.append({"label": label, "ok": False, "got": "-", "want": "Test hi galat hai: " + str(e)})
+                        continue
                     try:
                         got = eval(t[0], g)
                         results.append({"label": label, "ok": bool(got == want), "got": repr(got)[:300], "want": repr(want)[:300]})
@@ -64,6 +68,9 @@ onmessage = async e => {
   const {id, code, setup, tests} = e.data;
   try {
     await ready;
+    // numpy/pandas jaise packages import hon toh pehle unhe load karo (pehli baar download)
+    try { await py.loadPackagesFromImports(code + "\n" + (setup || "")); } catch {}
+    postMessage({type: "started", id});
     const run = py.globals.get("__jp_run");
     const res = run(code, setup || "", JSON.stringify(tests || []));
     run.destroy();

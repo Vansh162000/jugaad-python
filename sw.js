@@ -1,5 +1,5 @@
 // App files: network-first (naya code turant). Pyodide (Python engine): cache-first, version fixed hai.
-const CACHE = "jp-v1-1";
+const CACHE = "jp-v1-2";
 const SHELL = ["./", "./index.html", "./content.js", "./py-worker.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
